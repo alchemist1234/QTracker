@@ -30,52 +30,42 @@ class Ui_MainWindow(object):
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.cbb_detect = QComboBox(self.widget)
-        self.cbb_detect.addItem("")
-        self.cbb_detect.addItem("")
-        self.cbb_detect.addItem("")
-        self.cbb_detect.addItem("")
-        self.cbb_detect.setObjectName(u"cbb_detect")
-        self.cbb_detect.setMinimumSize(QSize(80, 32))
-        self.cbb_detect.setMaximumSize(QSize(160, 64))
-        self.cbb_detect.setSizeAdjustPolicy(QComboBox.AdjustToContents)
-
-        self.horizontalLayout.addWidget(self.cbb_detect)
-
-        self.cbb_extra = QComboBox(self.widget)
-        self.cbb_extra.addItem("")
-        self.cbb_extra.addItem("")
-        self.cbb_extra.setObjectName(u"cbb_extra")
-        self.cbb_extra.setMinimumSize(QSize(80, 32))
-        self.cbb_extra.setMaximumSize(QSize(160, 64))
-        self.cbb_extra.setSizeAdjustPolicy(QComboBox.AdjustToContents)
-
-        self.horizontalLayout.addWidget(self.cbb_extra)
-
-        self.cbb_tracking = QComboBox(self.widget)
-        self.cbb_tracking.addItem("")
-        self.cbb_tracking.addItem("")
-        self.cbb_tracking.addItem("")
-        self.cbb_tracking.setObjectName(u"cbb_tracking")
-        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.cbb_tracking.sizePolicy().hasHeightForWidth())
-        self.cbb_tracking.setSizePolicy(sizePolicy)
-        self.cbb_tracking.setMinimumSize(QSize(80, 32))
-        self.cbb_tracking.setMaximumSize(QSize(160, 64))
-        self.cbb_tracking.setSizeAdjustPolicy(QComboBox.AdjustToContents)
-
-        self.horizontalLayout.addWidget(self.cbb_tracking)
-
 
         self.horizontalLayout_3.addLayout(self.horizontalLayout)
 
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.bt_choose_file = QPushButton(self.widget)
+        self.bt_choose_file.setObjectName(u"bt_choose_file")
+        self.bt_choose_file.setMinimumSize(QSize(80, 32))
 
-        self.horizontalLayout_2.addItem(self.horizontalSpacer)
+        self.horizontalLayout_2.addWidget(self.bt_choose_file)
+
+        self.bt_load = QPushButton(self.widget)
+        self.bt_load.setObjectName(u"bt_load")
+        self.bt_load.setMinimumSize(QSize(80, 32))
+
+        self.horizontalLayout_2.addWidget(self.bt_load)
+
+        self.bt_analyze = QPushButton(self.widget)
+        self.bt_analyze.setObjectName(u"bt_analyze")
+        self.bt_analyze.setMinimumSize(QSize(80, 32))
+        self.bt_analyze.setMaximumSize(QSize(160, 64))
+        self.bt_analyze.setAutoExclusive(True)
+
+        self.horizontalLayout_2.addWidget(self.bt_analyze)
+
+        self.bt_track = QPushButton(self.widget)
+        self.bt_track.setObjectName(u"bt_track")
+        self.bt_track.setMinimumSize(QSize(80, 32))
+
+        self.horizontalLayout_2.addWidget(self.bt_track)
+
+        self.bt_export = QPushButton(self.widget)
+        self.bt_export.setObjectName(u"bt_export")
+        self.bt_export.setMinimumSize(QSize(80, 32))
+
+        self.horizontalLayout_2.addWidget(self.bt_export)
 
         self.bt_settings = QPushButton(self.widget)
         self.bt_settings.setObjectName(u"bt_settings")
@@ -84,25 +74,14 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_2.addWidget(self.bt_settings)
 
-        self.bt_start = QPushButton(self.widget)
-        self.bt_start.setObjectName(u"bt_start")
-        self.bt_start.setMinimumSize(QSize(80, 32))
-        self.bt_start.setMaximumSize(QSize(160, 64))
-        self.bt_start.setAutoExclusive(True)
+        self.label_2 = QLabel(self.widget)
+        self.label_2.setObjectName(u"label_2")
 
-        self.horizontalLayout_2.addWidget(self.bt_start)
+        self.horizontalLayout_2.addWidget(self.label_2)
 
-        self.bt_post = QPushButton(self.widget)
-        self.bt_post.setObjectName(u"bt_post")
-        self.bt_post.setMinimumSize(QSize(80, 32))
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
-        self.horizontalLayout_2.addWidget(self.bt_post)
-
-        self.bt_export_video = QPushButton(self.widget)
-        self.bt_export_video.setObjectName(u"bt_export_video")
-        self.bt_export_video.setMinimumSize(QSize(80, 32))
-
-        self.horizontalLayout_2.addWidget(self.bt_export_video)
+        self.horizontalLayout_2.addItem(self.horizontalSpacer)
 
 
         self.horizontalLayout_3.addLayout(self.horizontalLayout_2)
@@ -110,43 +89,33 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_3.addLayout(self.horizontalLayout_3)
 
-        self.horizontalLayout_5 = QHBoxLayout()
-        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
-        self.verticalLayout_2 = QVBoxLayout()
-        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
         self.horizontalLayout_4 = QHBoxLayout()
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.lb_file_path = QLabel(self.widget)
         self.lb_file_path.setObjectName(u"lb_file_path")
+        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.lb_file_path.sizePolicy().hasHeightForWidth())
+        self.lb_file_path.setSizePolicy(sizePolicy)
+        self.lb_file_path.setScaledContents(False)
         self.lb_file_path.setWordWrap(True)
 
         self.horizontalLayout_4.addWidget(self.lb_file_path)
 
-        self.bt_file_path_up = QPushButton(self.widget)
-        self.bt_file_path_up.setObjectName(u"bt_file_path_up")
-        self.bt_file_path_up.setMaximumSize(QSize(60, 16777215))
 
-        self.horizontalLayout_4.addWidget(self.bt_file_path_up)
+        self.verticalLayout_3.addLayout(self.horizontalLayout_4)
 
-
-        self.verticalLayout_2.addLayout(self.horizontalLayout_4)
-
-        self.list_files = QListView(self.widget)
-        self.list_files.setObjectName(u"list_files")
-
-        self.verticalLayout_2.addWidget(self.list_files)
-
-
-        self.horizontalLayout_5.addLayout(self.verticalLayout_2)
-
+        self.horizontalLayout_5 = QHBoxLayout()
+        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
         self.verticalLayout_4 = QVBoxLayout()
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
         self.horizontalLayout_7 = QHBoxLayout()
         self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
-        # self.graphicsView = QGraphicsView(self.widget)
-        # self.graphicsView.setObjectName(u"graphicsView")
+        self.graphicsView = QGraphicsView(self.widget)
+        self.graphicsView.setObjectName(u"graphicsView")
 
-        # self.horizontalLayout_7.addWidget(self.graphicsView)
+        self.horizontalLayout_7.addWidget(self.graphicsView)
 
         self.verticalLayout_5 = QVBoxLayout()
         self.verticalLayout_5.setSpacing(0)
@@ -154,7 +123,7 @@ class Ui_MainWindow(object):
         self.bt_select = QPushButton(self.widget)
         self.bt_select.setObjectName(u"bt_select")
         icon = QIcon()
-        icon.addFile(u"./images/cursor.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(u"C:/Users/zhanchen/.designer/images/cursor.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.bt_select.setIcon(icon)
         self.bt_select.setCheckable(True)
         self.bt_select.setAutoExclusive(True)
@@ -164,7 +133,7 @@ class Ui_MainWindow(object):
         self.bt_crop = QPushButton(self.widget)
         self.bt_crop.setObjectName(u"bt_crop")
         icon1 = QIcon()
-        icon1.addFile(u"./images/crop.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon1.addFile(u"C:/Users/zhanchen/.designer/images/crop.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.bt_crop.setIcon(icon1)
         self.bt_crop.setCheckable(True)
         self.bt_crop.setAutoExclusive(True)
@@ -174,7 +143,7 @@ class Ui_MainWindow(object):
         self.bt_move = QPushButton(self.widget)
         self.bt_move.setObjectName(u"bt_move")
         icon2 = QIcon()
-        icon2.addFile(u"./images/move.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon2.addFile(u"C:/Users/zhanchen/.designer/images/move.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.bt_move.setIcon(icon2)
         self.bt_move.setCheckable(True)
         self.bt_move.setAutoExclusive(True)
@@ -184,7 +153,7 @@ class Ui_MainWindow(object):
         self.bt_add = QPushButton(self.widget)
         self.bt_add.setObjectName(u"bt_add")
         icon3 = QIcon()
-        icon3.addFile(u"./images/add.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon3.addFile(u"C:/Users/zhanchen/.designer/images/add.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.bt_add.setIcon(icon3)
         self.bt_add.setCheckable(True)
         self.bt_add.setAutoExclusive(True)
@@ -194,7 +163,7 @@ class Ui_MainWindow(object):
         self.bt_combine = QPushButton(self.widget)
         self.bt_combine.setObjectName(u"bt_combine")
         icon4 = QIcon()
-        icon4.addFile(u"./images/combine.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon4.addFile(u"C:/Users/zhanchen/.designer/images/combine.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.bt_combine.setIcon(icon4)
 
         self.verticalLayout_5.addWidget(self.bt_combine)
@@ -340,8 +309,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_5.addLayout(self.verticalLayout_4)
 
-        self.horizontalLayout_5.setStretch(0, 1)
-        self.horizontalLayout_5.setStretch(1, 5)
+        self.horizontalLayout_5.setStretch(0, 5)
 
         self.verticalLayout_3.addLayout(self.horizontalLayout_5)
 
@@ -367,27 +335,14 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"QTracker", None))
-        self.cbb_detect.setItemText(0, QCoreApplication.translate("MainWindow", u"Gradient", None))
-        self.cbb_detect.setItemText(1, QCoreApplication.translate("MainWindow", u"Threshold", None))
-        self.cbb_detect.setItemText(2, QCoreApplication.translate("MainWindow", u"Abs.tresh", None))
-        self.cbb_detect.setItemText(3, QCoreApplication.translate("MainWindow", u"Bg Extract", None))
-
-        self.cbb_extra.setItemText(0, QCoreApplication.translate("MainWindow", u"Nothing", None))
-        self.cbb_extra.setItemText(1, QCoreApplication.translate("MainWindow", u"\u65b0\u5efa\u9879\u76ee", None))
-
-        self.cbb_tracking.setItemText(0, QCoreApplication.translate("MainWindow", u"Live", None))
-        self.cbb_tracking.setItemText(1, QCoreApplication.translate("MainWindow", u"Manual", None))
-        self.cbb_tracking.setItemText(2, QCoreApplication.translate("MainWindow", u"Auto", None))
-
+        self.bt_choose_file.setText(QCoreApplication.translate("MainWindow", u"\u6253\u5f00\u6587\u4ef6", None))
+        self.bt_load.setText(QCoreApplication.translate("MainWindow", u"\u52a0\u8f7d\u89c6\u9891", None))
+        self.bt_analyze.setText(QCoreApplication.translate("MainWindow", u"\u7c92\u5b50\u68c0\u6d4b", None))
+        self.bt_track.setText(QCoreApplication.translate("MainWindow", u"\u8f68\u8ff9\u8ddf\u8e2a", None))
+        self.bt_export.setText(QCoreApplication.translate("MainWindow", u"\u5bfc\u51fa\u89c6\u9891", None))
         self.bt_settings.setText(QCoreApplication.translate("MainWindow", u"\u8bbe\u7f6e", None))
-        self.bt_start.setText(QCoreApplication.translate("MainWindow", u"\u7c92\u5b50\u68c0\u6d4b", None))
-        self.bt_post.setText(QCoreApplication.translate("MainWindow", u"\u7c92\u5b50\u5206\u6790", None))
-        self.bt_export_video.setText(QCoreApplication.translate("MainWindow", u"\u5bfc\u51fa\u89c6\u9891", None))
-        self.lb_file_path.setText("")
-        self.bt_file_path_up.setText(QCoreApplication.translate("MainWindow", u"Up", None))
-#if QT_CONFIG(whatsthis)
-        self.list_files.setWhatsThis(QCoreApplication.translate("MainWindow", u"file_path", None))
-#endif // QT_CONFIG(whatsthis)
+        self.label_2.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))
+        self.lb_file_path.setText(QCoreApplication.translate("MainWindow", u"\u672a\u9009\u62e9\u6587\u4ef6", None))
 #if QT_CONFIG(tooltip)
         self.bt_select.setToolTip(QCoreApplication.translate("MainWindow", u"\u9009\u62e9", None))
 #endif // QT_CONFIG(tooltip)

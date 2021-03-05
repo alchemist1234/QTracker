@@ -1,4 +1,5 @@
 **/videos/
 **/.idea/
 **/__pycache__/
-config.ini
+**/config.ini
+**/settings.ini

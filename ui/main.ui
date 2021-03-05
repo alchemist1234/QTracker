@@ -21,153 +21,38 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_3">
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout">
-           <item>
-            <widget class="QComboBox" name="cbb_detect">
-             <property name="minimumSize">
-              <size>
-               <width>80</width>
-               <height>32</height>
-              </size>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>160</width>
-               <height>64</height>
-              </size>
-             </property>
-             <property name="sizeAdjustPolicy">
-              <enum>QComboBox::AdjustToContents</enum>
-             </property>
-             <item>
-              <property name="text">
-               <string>Gradient</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Threshold</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Abs.tresh</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Bg Extract</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="cbb_extra">
-             <property name="minimumSize">
-              <size>
-               <width>80</width>
-               <height>32</height>
-              </size>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>160</width>
-               <height>64</height>
-              </size>
-             </property>
-             <property name="sizeAdjustPolicy">
-              <enum>QComboBox::AdjustToContents</enum>
-             </property>
-             <item>
-              <property name="text">
-               <string>Nothing</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>新建项目</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="cbb_tracking">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>80</width>
-               <height>32</height>
-              </size>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>160</width>
-               <height>64</height>
-              </size>
-             </property>
-             <property name="sizeAdjustPolicy">
-              <enum>QComboBox::AdjustToContents</enum>
-             </property>
-             <item>
-              <property name="text">
-               <string>Live</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Manual</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Auto</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-          </layout>
+          <layout class="QHBoxLayout" name="horizontalLayout"/>
          </item>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_2">
            <item>
-            <spacer name="horizontalSpacer">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <widget class="QPushButton" name="bt_settings">
+            <widget class="QPushButton" name="bt_choose_file">
              <property name="minimumSize">
               <size>
                <width>80</width>
                <height>32</height>
               </size>
              </property>
-             <property name="maximumSize">
-              <size>
-               <width>160</width>
-               <height>64</height>
-              </size>
-             </property>
              <property name="text">
-              <string>设置</string>
+              <string>打开文件</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="bt_start">
+            <widget class="QPushButton" name="bt_load">
+             <property name="minimumSize">
+              <size>
+               <width>80</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>加载视频</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="bt_analyze">
              <property name="minimumSize">
               <size>
                <width>80</width>
@@ -189,7 +74,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="bt_post">
+            <widget class="QPushButton" name="bt_track">
              <property name="minimumSize">
               <size>
                <width>80</width>
@@ -197,12 +82,12 @@
               </size>
              </property>
              <property name="text">
-              <string>粒子分析</string>
+              <string>轨迹跟踪</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="bt_export_video">
+            <widget class="QPushButton" name="bt_export">
              <property name="minimumSize">
               <size>
                <width>80</width>
@@ -214,50 +99,74 @@
              </property>
             </widget>
            </item>
+           <item>
+            <widget class="QPushButton" name="bt_settings">
+             <property name="minimumSize">
+              <size>
+               <width>80</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>160</width>
+               <height>64</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>设置</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_2">
+             <property name="text">
+              <string>TextLabel</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
           </layout>
          </item>
         </layout>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="1,5">
+        <layout class="QHBoxLayout" name="horizontalLayout_4">
          <item>
-          <layout class="QVBoxLayout" name="verticalLayout_2">
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_4">
-             <item>
-              <widget class="QLabel" name="lb_file_path">
-               <property name="text">
-                <string/>
-               </property>
-               <property name="wordWrap">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="bt_file_path_up">
-               <property name="maximumSize">
-                <size>
-                 <width>60</width>
-                 <height>16777215</height>
-                </size>
-               </property>
-               <property name="text">
-                <string>Up</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <widget class="QListView" name="list_files">
-             <property name="whatsThis">
-              <string>file_path</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          <widget class="QLabel" name="lb_file_path">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>未选择文件</string>
+           </property>
+           <property name="scaledContents">
+            <bool>false</bool>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+          </widget>
          </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="5">
          <item>
           <layout class="QVBoxLayout" name="verticalLayout_4" stretch="10,0,0,0">
            <item>

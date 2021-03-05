@@ -57,6 +57,9 @@ settings_widget_mark_size = '标记大小'
 settings_widget_trajectory_color = '轨迹颜色'
 settings_widget_trajectory_size = '轨迹宽度'
 
+color_edit_widget_add = '添加颜色'
+color_edit_widget_delete = '删除颜色'
+color_edit_widget_random = '随机颜色'
 
 
 

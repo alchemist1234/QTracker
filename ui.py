@@ -1,12 +1,41 @@
+from typing import List, Union
+
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 from PySide6.QtWidgets import *
 
+import constant
+import default_settings
+from scene import VideoScene
 from settings import Settings
 from view import VideoView
-from scene import VideoScene
-import default_settings
-import constant
+
+
+class ColorLabel(QLabel):
+    clicked = Signal(QMouseEvent)
+
+    def __init__(self, parent=None):
+        super(ColorLabel, self).__init__(parent)
+        self.brush = QBrush()
+        self.brush.setStyle(Qt.SolidPattern)
+        self.painter = QPainter()
+
+    def set_color(self, colors: Union[List[QColor], QColor]):
+        if not isinstance(colors, list):
+            colors = [colors]
+        size = len(colors)
+        color_size = int(self.width() / size)
+        color_size = 1 if color_size < 1 else color_size
+        pixmap = QPixmap(self.width(), self.height())
+        self.painter.begin(pixmap)
+        for i, color in enumerate(colors):
+            self.brush.setColor(color)
+            self.painter.fillRect(color_size * i, 0, color_size, self.height(), self.brush)
+        self.painter.end()
+        self.setPixmap(pixmap)
+
+    def mousePressEvent(self, ev: QMouseEvent) -> None:
+        self.clicked.emit(ev)
 
 
 class ViewButtonGroup(QWidget):
@@ -155,8 +184,9 @@ class MainUi(object):
 
 
 class SettingUi(object):
-    def __init__(self, dialog: QDialog):
+    def __init__(self, dialog: QDialog, settings: Settings):
         self.dialog = dialog
+        self.settings = settings
         dialog.setLayoutDirection(Qt.LeftToRight)
         dialog.setAutoFillBackground(False)
         base_vbox = QVBoxLayout(dialog)
@@ -172,12 +202,12 @@ class SettingUi(object):
         self.lb_median_blur = QLabel(dialog)
         self.sb_median_blur = QSpinBox(dialog)
         self.lb_opening_size = QLabel(dialog)
-        self.sb_open_size = QSpinBox(dialog)
+        self.sb_opening_size = QSpinBox(dialog)
         hbox_img_treat1 = QHBoxLayout()
         hbox_img_treat1.addWidget(self.lb_median_blur)
         hbox_img_treat1.addWidget(self.sb_median_blur)
         hbox_img_treat1.addWidget(self.lb_opening_size)
-        hbox_img_treat1.addWidget(self.sb_open_size)
+        hbox_img_treat1.addWidget(self.sb_opening_size)
 
         self.lb_gaussian_blur = QLabel(dialog)
         self.sb_gaussian_blur = QSpinBox(dialog)
@@ -313,7 +343,8 @@ class SettingUi(object):
         vbox_particle = QVBoxLayout(self.gb_display_particle)
 
         self.lb_particle_color = QLabel(dialog)
-        self.lb_particle_color_display = QLabel(dialog)
+        self.lb_particle_color_display = ColorLabel(dialog)
+        self.lb_particle_color_display.setFixedSize(76, 20)
         self.lb_particle_size = QLabel(dialog)
         self.sb_particle_size = QSpinBox(dialog)
         hbox_display = QHBoxLayout()
@@ -329,7 +360,8 @@ class SettingUi(object):
         vbox_mark = QVBoxLayout(self.gb_display_mark)
 
         self.lb_mark_color = QLabel(dialog)
-        self.lb_mark_color_display = QLabel(dialog)
+        self.lb_mark_color_display = ColorLabel(dialog)
+        self.lb_mark_color_display.setFixedSize(76, 20)
         self.lb_mark_size = QLabel(dialog)
         self.sb_mark_size = QSpinBox(dialog)
         hbox_mark = QHBoxLayout()
@@ -345,7 +377,8 @@ class SettingUi(object):
         vbox_trajectory = QVBoxLayout(self.gb_display_trajectory)
 
         self.lb_trajectory_color = QLabel(dialog)
-        self.lb_trajectory_color_display = QLabel(dialog)
+        self.lb_trajectory_color_display = ColorLabel(dialog)
+        self.lb_trajectory_color_display.setFixedSize(76, 20)
         self.lb_trajectory_size = QLabel(dialog)
         self.sb_trajectory_size = QSpinBox(dialog)
         hbox_trajectory1 = QHBoxLayout()
@@ -369,8 +402,43 @@ class SettingUi(object):
 
         base_vbox.addWidget(self.tab_widget)
         base_vbox.addWidget(self.bt_box)
-
+        self.init_data()
         self.translate()
+
+    def init_data(self):
+        self.sb_median_blur.setValue(self.settings.int_value(default_settings.median_blur))
+        self.sb_gaussian_blur.setValue(self.settings.int_value(default_settings.gaussian_blur))
+        self.sb_opening_size.setValue(self.settings.int_value(default_settings.opening_size))
+        self.sb_closing_size.setValue(self.settings.int_value(default_settings.closing_size))
+        self.cb_apply_hist_eq.setChecked(self.settings.boolean_value(default_settings.apply_hist_eq))
+        self.sb_adaptive_hist_eq.setValue(self.settings.int_value(default_settings.adaptive_hist_eq))
+        self.sb_bilateral_filter_size.setValue(self.settings.int_value(default_settings.bilateral_size))
+        self.sb_bilateral_filter_color.setValue(self.settings.int_value(default_settings.bilateral_color))
+        self.sb_bilateral_filter_space.setValue(self.settings.int_value(default_settings.bilateral_space))
+        self.sb_search_radius.setValue(self.settings.int_value(default_settings.search_radius))
+        self.sb_minimum_detect_area.setValue(self.settings.int_value(default_settings.minimum_area_for_detection))
+        self.sb_maximum_detect_area.setValue(self.settings.int_value(default_settings.maximum_area_for_detection))
+        self.sb_memory_frames.setValue(self.settings.int_value(default_settings.memory_frames))
+        self.sb_threshold.setValue(self.settings.int_value(default_settings.threshold))
+        self.sb_derivative_order.setValue(self.settings.int_value(default_settings.derivative_order))
+        self.sb_kernel_size.setValue(self.settings.int_value(default_settings.kernel_size))
+        self.cb_split_particles.setChecked(self.settings.boolean_value(default_settings.split_circular_particles))
+        self.sb_particle_radius_for_split.setValue(self.settings.int_value(default_settings.split_radius))
+        self.cb_fit_to_screen.setChecked(self.settings.boolean_value(default_settings.fit_to_screen))
+        self.sb_skip_frames.setValue(self.settings.int_value(default_settings.skip_frames))
+        self.sb_from_frames.setValue(self.settings.int_value(default_settings.from_frames))
+        self.sb_to_frames.setValue(self.settings.int_value(default_settings.to_frames))
+        self.update_color_label(self.lb_particle_color_display, default_settings.particle_color)
+        self.sb_particle_size.setValue(self.settings.int_value(default_settings.particle_size))
+        self.update_color_label(self.lb_mark_color_display, default_settings.mark_color)
+        self.sb_mark_size.setValue(self.settings.int_value(default_settings.mark_size))
+        self.update_color_label(self.lb_trajectory_color_display, default_settings.trajectory_color)
+        self.sb_trajectory_size.setValue(self.settings.int_value(default_settings.trajectory_size))
+
+    def update_color_label(self, label: ColorLabel, item: default_settings.setting_item):
+        colors = self.settings.list_value(item)
+        colors = [QColor(c) for c in colors]
+        label.set_color(colors)
 
     def translate(self):
         self.dialog.setWindowTitle(self.dialog.tr(constant.settings_title))
@@ -400,3 +468,50 @@ class SettingUi(object):
         self.lb_mark_size.setText(self.dialog.tr(constant.settings_widget_mark_size))
         self.lb_trajectory_color.setText(self.dialog.tr(constant.settings_widget_trajectory_color))
         self.lb_trajectory_size.setText(self.dialog.tr(constant.settings_widget_trajectory_size))
+
+
+class ColorEditorUi(object):
+    def __init__(self, color_editor: QDialog):
+        self.color_editor = color_editor
+        self.hbox_base = QHBoxLayout(color_editor)
+        self.lv_color = QListWidget(color_editor)
+
+        self.lv_color.setGridSize(QSize(100, 32))
+        self.lv_color.setViewMode(QListView.ListMode)
+
+        self.bt_add = QPushButton(color_editor)
+        self.bt_delete = QPushButton(color_editor)
+        self.bt_random = QPushButton(color_editor)
+        self.bt_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Vertical, color_editor)
+        self.bt_box.addButton(self.bt_add, QDialogButtonBox.ButtonRole.ActionRole)
+        self.bt_box.addButton(self.bt_delete, QDialogButtonBox.ButtonRole.ActionRole)
+        self.bt_box.addButton(self.bt_random, QDialogButtonBox.ButtonRole.ActionRole)
+        self.bt_box.accepted.connect(color_editor.accept)
+        self.bt_box.rejected.connect(color_editor.reject)
+
+        self.hbox_base.addWidget(self.lv_color)
+        self.hbox_base.addWidget(self.bt_box)
+
+        self.translate()
+
+    def translate(self):
+        self.bt_add.setText(self.color_editor.tr(constant.color_edit_widget_add))
+        self.bt_delete.setText(self.color_editor.tr(constant.color_edit_widget_delete))
+        self.bt_random.setText(self.color_editor.tr(constant.color_edit_widget_random))
+
+
+class ColorWidgetUi(object):
+    def __init__(self, parent: QWidget, color: QColor, height: int):
+        margin = 4
+        self.layout = QHBoxLayout(parent)
+        self.layout.setContentsMargins(margin, margin, margin, margin)
+        self.layout.setSpacing(margin)
+        self.color_name = QColor(color).name()
+        self.lb_color = ColorLabel(parent)
+        self.lb_color.setFixedSize(64, height - 2 * margin)
+        self.lb_color.set_color([color])
+        self.lb_color_name = QLabel(parent)
+        self.lb_color_name.setText(self.color_name)
+        self.layout.addWidget(self.lb_color)
+        self.layout.addWidget(self.lb_color_name)
+        self.layout.addItem(QSpacerItem(20, height, QSizePolicy.Minimum, QSizePolicy.Expanding))

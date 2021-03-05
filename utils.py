@@ -1,9 +1,6 @@
 import math
 import re
-from typing import Set, Tuple, List
-
-from PySide2.QtGui import QColor, QPainter, QBrush, QPixmap
-from PySide2.QtCore import Qt
+from typing import Set, Tuple
 
 
 def split_indexes_text(text: str) -> Set[int]:
@@ -64,19 +61,3 @@ def hsv2rgb(h: float, s: float, v: float) -> Tuple[float, float, float]:
         r, g, b = v, p, q
     r, g, b = int(r * 255), int(g * 255), int(b * 255)
     return b, g, r
-
-
-def color_pixmap(width: int, height: int, colors: List[QColor]) -> QPixmap:
-    size = len(colors)
-    color_size = int(width / size)
-    color_size = 1 if color_size < 1 else color_size
-    pixmap = QPixmap(width, height)
-    painter = QPainter(pixmap)
-    brush = QBrush()
-    brush.setStyle(Qt.SolidPattern)
-    painter.begin(pixmap)
-    for i, color in enumerate(colors):
-        brush.setColor(color)
-        painter.fillRect(color_size * i, 0, color_size, height, brush)
-    painter.end()
-    return pixmap

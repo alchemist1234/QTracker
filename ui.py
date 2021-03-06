@@ -15,27 +15,41 @@ class ColorLabel(QLabel):
     clicked = Signal(QMouseEvent)
 
     def __init__(self, parent=None):
-        super(ColorLabel, self).__init__(parent)
+        super(ColorLabel, self).__init__(parent=parent)
         self.brush = QBrush()
         self.brush.setStyle(Qt.SolidPattern)
         self.painter = QPainter()
+        self._colors = []
+
+    @property
+    def colors(self):
+        return self._colors
 
     def set_color(self, colors: Union[List[QColor], QColor]):
         if not isinstance(colors, list):
             colors = [colors]
+        self._colors = colors
         size = len(colors)
-        color_size = int(self.width() / size)
-        color_size = 1 if color_size < 1 else color_size
+        base_color_width = int(self.width() / size)
+        base_color_width = 1 if base_color_width < 1 else base_color_width
+        unfilled_width = self.width() - base_color_width * size
         pixmap = QPixmap(self.width(), self.height())
+        filled_width = 0
         self.painter.begin(pixmap)
-        for i, color in enumerate(colors):
+        for color in colors:
+            color_width = base_color_width
+            if unfilled_width > 0:
+                color_width += 1
+                unfilled_width -= 1
             self.brush.setColor(color)
-            self.painter.fillRect(color_size * i, 0, color_size, self.height(), self.brush)
+            self.painter.fillRect(filled_width, 0, color_width, self.height(), self.brush)
+            filled_width += color_width
         self.painter.end()
         self.setPixmap(pixmap)
 
     def mousePressEvent(self, ev: QMouseEvent) -> None:
         self.clicked.emit(ev)
+        super(ColorLabel, self).mousePressEvent(ev)
 
 
 class ViewButtonGroup(QWidget):

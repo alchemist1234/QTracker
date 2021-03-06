@@ -3,7 +3,7 @@ from typing import List, Optional
 
 import numpy as np
 from PySide6.QtCore import Qt, Slot, QModelIndex, QSize, Signal
-from PySide6.QtGui import QFontMetrics, QResizeEvent, QColor
+from PySide6.QtGui import QFontMetrics, QResizeEvent, QColor, QMouseEvent
 from PySide6.QtWidgets import *
 
 import constant
@@ -38,6 +38,7 @@ class MainWindow(QMainWindow):
         file_loader = VideoLoader(self)
         file_loader.sig_start.connect(self.load_start)
         file_loader.sig_progress.connect(self.progressing)
+        file_loader.sig_frame_finished.connect(self.load_frame_finished)
         file_loader.sig_all_finished.connect(self.load_all_finished)
         return file_loader
 
@@ -95,11 +96,14 @@ class MainWindow(QMainWindow):
 
     @Slot(int, np.ndarray)
     def load_frame_finished(self, frame_index: int, frame: np.ndarray):
+        self.frames[frame_index] = frame
         pass
 
     @Slot(int, dict)
     def load_all_finished(self, frames: dict):
-        self.frames = frames
+        # self.frames = frames
+        # print(self.frames[1])
+        print(len(self.frames))
 
     def analyze(self):
         if len(self.frames) > 0:
@@ -136,14 +140,20 @@ class SettingDialog(QDialog):
         self.settings = settings
         self.ui = SettingUi(self, settings)
 
-        particle_colors = self.settings.list_value(default_settings.particle_color)
-        particle_colors = [QColor(c) for c in particle_colors]
-        self.ui.lb_particle_color_display.clicked.connect(lambda x: self.edit_color(x, particle_colors))
+        self.ui.lb_particle_color_display.clicked.connect(lambda x: self.edit_color(self.ui.lb_particle_color_display))
+        self.ui.lb_mark_color_display.clicked.connect(lambda x: self.edit_color(self.ui.lb_mark_color_display))
+        self.ui.lb_trajectory_color_display.clicked.connect(
+            lambda x: self.edit_color(self.ui.lb_trajectory_color_display))
 
-    def edit_color(self, event, colors: List[QColor]):
-        editor = ColorEditor(self)
-        editor.add_colors(colors)
+    def edit_color(self, label: ColorLabel):
+        editor = ColorEditor(self, label)
+        editor.add_colors(label.colors)
+        editor.sig_color_changed.connect(self.update_color)
         editor.exec_()
+
+    @Slot(ColorLabel, list)
+    def update_color(self, label: ColorLabel, colors: List[QColor]):
+        label.set_color(colors)
 
 
 class ColorWidget(QWidget):
@@ -153,13 +163,14 @@ class ColorWidget(QWidget):
         self.color = color
         self.color_name = QColor(color).name()
 
-        self.ui.lb_color.clicked.connect(parent.mouseDoubleClickEvent)
-
     def update_color(self, color: QColor):
         self.color = color
         self.color_name = QColor(color).name()
         self.ui.lb_color.set_color(color)
         self.ui.lb_color_name.setText(self.color_name)
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
+        self.parent().mouseDoubleClickEvent(event)
 
 
 class ColorEditor(QDialog):
@@ -192,9 +203,19 @@ class ColorEditor(QDialog):
         widget = self.ui.lv_color.indexWidget(model_index)
         origin_color = widget.color
         color = QColorDialog.getColor(origin_color, self)
-        widget.update_color(color)
+        if color.isValid():
+            widget.update_color(color)
+
+    def get_colors(self):
+        colors = []
+        for i in range(self.ui.lv_color.count()):
+            item = self.ui.lv_color.item(i)
+            color_widget = self.ui.lv_color.itemWidget(item)
+            colors.append(color_widget.color)
+        return colors
 
     def accept(self) -> None:
+        self.sig_color_changed.emit(self.label, self.get_colors())
         super(ColorEditor, self).accept()
 
 

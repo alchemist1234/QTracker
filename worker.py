@@ -22,7 +22,6 @@ class VideoLoader(QThread):
         super(VideoLoader, self).__init__(parent)
         self.video_data = VideoData()
         self.vid = None
-        self.frames = {}
 
     def set_file(self, file_path: str):
         self.video_data.file_path = file_path
@@ -48,7 +47,8 @@ class VideoLoader(QThread):
             frames[frame_index] = color_frame
             self.sig_progress.emit(self.video_data.frame_count, frame_index, self.tr(constant.status_reading))
             self.sig_frame_finished.emit(frame_index, frame)
-        self.sig_all_finished.emit(frames)
+        # self.sig_all_finished.emit(frames)
+        # del frames
 
 
 class Analyzer(QThread):

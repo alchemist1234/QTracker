@@ -128,9 +128,10 @@ class MainUi(object):
         self.hbox_middle = QHBoxLayout()
         self.view = VideoView(main)
         self.scene = VideoScene(self.view)
+        self.view.setScene(self.scene)
         self._btg_view = ViewButtonGroup(self.widget)
         self.hbox_middle.addWidget(self.view)
-        self.view.addFixedWidget(self._btg_view, Qt.AlignRight | Qt.AlignTop)
+        self.view.add_fixed_widget(self._btg_view, Qt.AlignRight | Qt.AlignTop)
         self.vbox_widget.addLayout(self.hbox_middle)
 
         # Bottom Layout

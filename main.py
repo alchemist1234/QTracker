@@ -1,9 +1,10 @@
+import sys
 import os
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 import numpy as np
 from PySide6.QtCore import Qt, Slot, QModelIndex, QSize, Signal
-from PySide6.QtGui import QFontMetrics, QResizeEvent, QColor, QMouseEvent
+from PySide6.QtGui import QFontMetrics, QResizeEvent, QColor, QMouseEvent, QPixmap, QImage
 from PySide6.QtWidgets import *
 
 import constant
@@ -26,7 +27,6 @@ class MainWindow(QMainWindow):
 
         # thread
         self.file_loader = self.init_file_loader()
-        self.analyzer = self.init_analyzer()
 
         # connect
         self.ui.bt_select_file.clicked.connect(self.select_file)
@@ -35,7 +35,7 @@ class MainWindow(QMainWindow):
         self.ui.bt_analyze.clicked.connect(self.analyze)
 
     def init_file_loader(self):
-        file_loader = VideoLoader(self)
+        file_loader = VideoLoader(self.settings, self)
         file_loader.sig_start.connect(self.load_start)
         file_loader.sig_progress.connect(self.progressing)
         file_loader.sig_frame_finished.connect(self.load_frame_finished)
@@ -94,16 +94,17 @@ class MainWindow(QMainWindow):
             self.ui.status_bar.showMessage(info)
         self.ui.status_progress.setValue(val)
 
-    @Slot(int, np.ndarray)
-    def load_frame_finished(self, frame_index: int, frame: np.ndarray):
-        self.frames[frame_index] = frame
+    @Slot(int, QImage, dict)
+    def load_frame_finished(self, frame_index: int, frame_img: QImage, frame_particles: Dict[Any, Any]):
+        self.ui.scene.add_frame_image(frame_index, frame_img)
+        self.ui.scene.change_frame(frame_index)
+        print(frame_index, frame_img, frame_particles)
         pass
 
     @Slot(int, dict)
-    def load_all_finished(self, frames: dict):
-        # self.frames = frames
-        # print(self.frames[1])
-        print(len(self.frames))
+    def load_all_finished(self):
+        print(sys.getsizeof(self.ui.scene.frame_images))
+        pass
 
     def analyze(self):
         if len(self.frames) > 0:
@@ -111,18 +112,6 @@ class MainWindow(QMainWindow):
             self.analyzer.start()
         else:
             QMessageBox.warning(self.parent(), self.tr(constant.msg_error), self.tr(constant.msg_file_unselected))
-
-    @Slot()
-    def analyze_start(self):
-        pass
-
-    @Slot()
-    def analyze_frame_finished(self):
-        pass
-
-    @Slot()
-    def analyze_all_finished(self):
-        pass
 
     def file_selected(self):
         return self.file_path is not None and len(self.file_path) > 0

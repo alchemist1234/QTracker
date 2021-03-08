@@ -1,8 +1,10 @@
+import sys
 from collections import namedtuple
 from typing import List, Dict, Set
 from enum import Enum
 
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QThread, Signal, QObject
+from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QMessageBox
 import cv2
 import numpy as np
@@ -15,13 +17,15 @@ import default_settings
 class VideoLoader(QThread):
     sig_start = Signal()
     sig_progress = Signal(int, int, str)
-    sig_frame_finished = Signal(int, np.ndarray)
-    sig_all_finished = Signal(dict)
+    sig_frame_finished = Signal(int, QImage, dict)
+    sig_all_finished = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, settings: Settings, parent=None):
         super(VideoLoader, self).__init__(parent)
+        self.settings = settings
         self.video_data = VideoData()
         self.vid = None
+        self.analyzer = Analyzer(settings, self)
 
     def set_file(self, file_path: str):
         self.video_data.file_path = file_path
@@ -37,26 +41,21 @@ class VideoLoader(QThread):
             QMessageBox.warning(self.parent(), '错误', '未选择文件')
             return
         frame_index = 0
-        frames = {}
         while True:
             ret, frame = self.vid.read()
             if not ret:
                 break
             color_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame_index += 1
-            frames[frame_index] = color_frame
+            origin_h, origin_w, ch = frame.shape
+            img = QImage(frame.data, origin_w, origin_h, ch * origin_w, QImage.Format_BGR888)
+            frame_particles = self.analyzer.analyze(frame_index, color_frame)
             self.sig_progress.emit(self.video_data.frame_count, frame_index, self.tr(constant.status_reading))
-            self.sig_frame_finished.emit(frame_index, frame)
-        # self.sig_all_finished.emit(frames)
-        # del frames
+            self.sig_frame_finished.emit(frame_index, img, frame_particles)
+        self.sig_all_finished.emit()
 
 
-class Analyzer(QThread):
-    sig_start = Signal()
-    sig_progress = Signal(int, int, str)
-    sig_frame_finished = Signal(int, dict)
-    sig_all_finished = Signal()
-
+class Analyzer(QObject):
     HistoryParticle = namedtuple('HistoryParticle', ['center', 'frame'])
 
     class Judgement(Enum):
@@ -68,40 +67,11 @@ class Analyzer(QThread):
     def __init__(self, settings: Settings, parent=None):
         super(Analyzer, self).__init__(parent)
         self.settings = settings
-        self._frames = {}
-        self._frame_indexes = []
-        self.frame_particles = {}
         self.history_particles = {}
         self.max_label = 0
 
-    @property
-    def frames(self):
-        return self._frames
-
-    @frames.setter
-    def frames(self, value: Dict[int, np.ndarray]):
-        self._frames = value
-        self._frame_indexes = list(value.keys())
-        self._frame_indexes.sort()
-
-    def clear_data(self):
-        self.frames = {}
-        self.frame_particles = {}
-        self.history_particles = {}
-        self.max_label = 0
-
-    def run(self):
-        self.sig_start.emit()
-        for i, index in enumerate(self._frame_indexes):
-            self.analyze(index)
-            self.sig_frame_finished.emit(index, self.frame_particles[index])
-            self.sig_progress.emit(len(self.frames), i + 1, self.tr(constant.status_analyzing))
-        self.sig_all_finished.emit()
-        print('analyze finished')
-
-    def analyze(self, frame_index):
-        self.frame_particles[frame_index] = {}
-        frame = self.frames[frame_index].copy()
+    def analyze(self, frame_index: int, frame: np.ndarray):
+        frame_particles = {}
         frame, frame_gray = self.smooth(frame)
         binary = self.binary(frame_gray)
         contours, hierarchy = cv2.findContours(binary.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -122,12 +92,13 @@ class Analyzer(QThread):
                 if frame_index - history_center.frame <= memory_frames and \
                         self.same_particle(history_center.center, center_tuple):
                     self.history_particles[index] = Analyzer.HistoryParticle(center_tuple, frame_index)
-                    self.frame_particles[frame_index][index] = center_tuple
+                    frame_particles[index] = center_tuple
                     break
             else:
-                self.frame_particles[frame_index][self.max_label] = center_tuple
+                frame_particles[self.max_label] = center_tuple
                 self.history_particles[self.max_label] = Analyzer.HistoryParticle(center_tuple, frame_index)
                 self.max_label += 1
+        return frame_particles
 
     def same_particle(self, old_center, new_center):
         dis = 40

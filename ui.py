@@ -127,7 +127,7 @@ class MainUi(object):
         # Middle Layout
         self.hbox_middle = QHBoxLayout()
         self.view = VideoView(main)
-        self.scene = VideoScene(self.view)
+        self.scene = VideoScene(self.view, settings)
         self.view.setScene(self.scene)
         self._btg_view = ViewButtonGroup(self.widget)
         self.hbox_middle.addWidget(self.view)

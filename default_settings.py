@@ -1,6 +1,6 @@
 from collections import namedtuple
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor
+
+from PySide6.QtGui import QColor, QFont
 
 setting_item = namedtuple('setting_item', ['section', 'key', 'default_value'])
 
@@ -36,7 +36,14 @@ frame_quality = setting_item('analyze', 'frame_quality', 80)
 
 particle_color = setting_item('display', 'particle_color', QColor(0, 255, 0))
 particle_size = setting_item('display', 'particle_size', 4)
+show_particle = setting_item('display', 'show_particle', True)
 mark_color = setting_item('display', 'mark_color', QColor(255, 0, 0))
 mark_size = setting_item('display', 'mark_size', 4)
+mark_font = setting_item('display', 'mark_font', QFont('SimHei'))
+show_mark = setting_item('display', 'show_mark', True)
+same_mark_color_with_particle = setting_item('display', 'same_mark_color_with_particle', False)
 trajectory_color = setting_item('display', 'trajectory_color', QColor(0, 0, 255))
 trajectory_size = setting_item('display', 'trajectory_size', 2)
+show_trajectory = setting_item('display', 'show_trajectory', True)
+same_trajectory_color_with_particle = setting_item('display', 'same_trajectory_color_with_particle', False)
+index_filter = setting_item('display', 'index_filter', [])

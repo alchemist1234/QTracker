@@ -111,7 +111,7 @@ class Analyzer(QObject):
         return frame_particles
 
     def same_particle(self, old_center, new_center):
-        dis = 40
+        dis = self.settings.int_value(default_settings.memory_frames)
         return abs(new_center[0] - old_center[0]) <= dis and abs(new_center[1] - old_center[1]) <= dis
 
     def smooth(self, frame):

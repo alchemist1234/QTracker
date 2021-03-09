@@ -10,6 +10,7 @@ class Settings(object):
         self.setting_path = setting_path
         self.settings = QSettings(setting_path, QSettings.IniFormat)
         self.settings.setFallbacksEnabled(False)
+        self.set_value(index_filter, [])
 
     def int_value(self, item: setting_item):
         return int(self.value(item))
@@ -29,3 +30,4 @@ class Settings(object):
 
     def set_value(self, item: setting_item, value: Any):
         self.settings.setValue(f'{item.section}/{item.key}', value)
+

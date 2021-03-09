@@ -98,15 +98,16 @@ class MainWindow(QMainWindow):
     @Slot(int, bytes, dict)
     def load_frame_finished(self, frame_index: int, frame_base64: bytes, frame_particles: Dict[Any, Any]):
         self.ui.scene.add_frame_image(frame_index, frame_base64)
+        self.ui.scene.add_particle_pos(frame_index, frame_particles)
         if frame_index == 1:
-            self.ui.scene.change_frame(frame_index)
+            self.ui.scene.update_frame(frame_index)
 
     @Slot(int, dict)
     def load_all_finished(self):
         pass
 
     def frame_changed(self, value):
-        self.ui.scene.change_frame(value)
+        self.ui.scene.update_frame(value)
 
     def file_selected(self):
         return self.file_path is not None and len(self.file_path) > 0

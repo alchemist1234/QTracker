@@ -1,6 +1,11 @@
 from typing import Dict, Tuple
-from PySide6.QtCore import QObject
-import numpy as np
+
+from PySide6.QtCore import Qt, QPoint
+from PySide6.QtGui import QBrush, QPen, QColor, QFont
+from PySide6.QtWidgets import *
+
+import default_settings
+from settings import Settings
 
 
 class VideoData(object):
@@ -52,24 +57,114 @@ class VideoData(object):
         self._frames = frames
 
 
-class ParticleData(object):
-    def __init__(self):
-        self._frame_count = 0
-        self._particle_pos = {}
+class SettingWidgetHelper(object):
+    def __init__(self, settings: Settings):
+        self.settings = settings
 
-    @property
-    def frame_count(self):
-        return self._frame_count
+    def particle_brush(self, index: int):
+        brush = QBrush()
+        brush.setStyle(Qt.SolidPattern)
+        colors = self.settings.list_value(default_settings.particle_color)
+        colors = [QColor(c) for c in colors]
+        brush.setColor(colors[index % len(colors)])
+        return brush
+
+    def particle_pen(self, index: int):
+        pen = QPen()
+        colors = self.settings.list_value(default_settings.particle_color)
+        colors = [QColor(c) for c in colors]
+        pen.setColor(colors[index % len(colors)])
+        pen.setStyle(Qt.SolidLine)
+        pen.setWidth(0)
+        return pen
+
+    def mark_brush(self, index: int):
+        if self.settings.boolean_value(default_settings.same_mark_color_with_particle):
+            return self.particle_brush(index)
+        else:
+            brush = QBrush()
+            colors = self.settings.list_value(default_settings.mark_color)
+            colors = [QColor(c) for c in colors]
+            brush.setStyle(Qt.SolidPattern)
+            brush.setColor(colors[index % len(colors)])
+            return brush
+
+    def visible(self, setting_item: default_settings.setting_item, index: int):
+        index_filter = self.settings.list_value(default_settings.index_filter)
+        return self.settings.boolean_value(setting_item) and (index in index_filter or len(index_filter) == 0)
+
+
+class ParticleItem(QGraphicsEllipseItem):
+
+    def __init__(self, settings: Settings, index: int, x, y):
+        radius = settings.int_value(default_settings.particle_size)
+        super().__init__(x - radius, y - radius, radius * 2, radius * 2)
+        self.settings = settings
+        self.settings_helper = SettingWidgetHelper(settings)
+        self.index = index
+        self.setFlag(QGraphicsItem.ItemIsSelectable, True)
+        self.setFlag(QGraphicsItem.ItemIsMovable, True)
+        self.setToolTip(str(index))
+        self.setBrush(self.settings_helper.particle_brush(index))
+        self.setPen(self.settings_helper.particle_pen(index))
+        self.mark = None
+
+    def center(self) -> QPoint:
+        rect = self.rect()
+        return QPoint(rect.x() + rect.width() / 2, rect.y() + rect.height() / 2)
+
+
+class MarkItem(QGraphicsSimpleTextItem):
+    def __init__(self, settings: Settings, index: int, center_x, center_y, prefix: str = '', suffix: str = ''):
+        super().__init__(prefix + str(index) + suffix)
+        self.settings = settings
+        self.settings_helper = SettingWidgetHelper(settings)
+        self.index = index
+        self.setFlag(QGraphicsItem.ItemIsSelectable, True)
+        self.setFlag(QGraphicsItem.ItemIsMovable, True)
+        self.setFont(QFont(self.settings.value(default_settings.mark_font)))
+        self.setBrush(self.settings_helper.mark_brush(index))
+        radius = self.settings.int_value(default_settings.particle_size)
+        x = center_x - radius - self.boundingRect().width()
+        y = center_y - radius - self.boundingRect().height()
+        if x < 0:
+            x = center_x + radius
+        if y < 0:
+            y = center_y + radius
+        self.setX(x)
+        self.setY(y)
+
+
+class ParticleGroup(QGraphicsItemGroup):
+    def __init__(self, settings: Settings, index: int, x, y):
+        super().__init__()
+        self.settings = settings
+        self.index = index
+        self.setX(x)
+        self.setY(y)
+        self.particle = ParticleItem(settings, index, x, y)
+        self.mark = MarkItem(settings, index, x, y)
+        self.addToGroup(self.particle)
+        self.addToGroup(self.mark)
+        self.setFlag(QGraphicsItem.ItemIsSelectable, True)
+        self.setFlag(QGraphicsItem.ItemIsMovable, True)
+
+
+class ParticleData(object):
+
+    def __init__(self, settings: Settings, particle_pos: Dict[int, Tuple[int, int]]):
+        self.settings = settings
+        self.setting_helper = SettingWidgetHelper(settings)
+        self._particle_pos = particle_pos
 
     @property
     def particle_pos(self):
         return self._particle_pos
 
-    def clear_data(self):
-        self._frame_count = 0
-        self._particle_pos.clear()
-
-    def add_data(self, frame_index: int, particles: Dict[int, Tuple[int, int]]):
-        if frame_index not in self._particle_pos:
-            self._frame_count += 1
-        self._particle_pos[frame_index] = particles
+    def particle_group_items(self):
+        groups = {}
+        for index, pos in self._particle_pos.items():
+            if self.setting_helper.visible(default_settings.show_particle, index):
+                particle_group = ParticleGroup(self.settings, index, pos[0], pos[1])
+                groups[index] = particle_group
+        return groups

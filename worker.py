@@ -3,7 +3,7 @@ from collections import namedtuple
 from typing import List, Dict, Set
 from enum import Enum
 
-from PySide6.QtCore import QThread, Signal, QObject
+from PySide6.QtCore import QThread, Signal, QObject, QByteArray, QBuffer, QIODevice
 from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QMessageBox
 import cv2
@@ -15,9 +15,9 @@ import default_settings
 
 
 class VideoLoader(QThread):
-    sig_start = Signal()
+    sig_start = Signal(int)
     sig_progress = Signal(int, int, str)
-    sig_frame_finished = Signal(int, QImage, dict)
+    sig_frame_finished = Signal(int, bytes, dict)
     sig_all_finished = Signal()
 
     def __init__(self, settings: Settings, parent=None):
@@ -36,7 +36,7 @@ class VideoLoader(QThread):
         self.video_data.frame_count = int(self.vid.get(cv2.CAP_PROP_FRAME_COUNT))
 
     def run(self):
-        self.sig_start.emit()
+        self.sig_start.emit(self.video_data.frame_count)
         if self.vid is None:
             QMessageBox.warning(self.parent(), '错误', '未选择文件')
             return
@@ -49,10 +49,20 @@ class VideoLoader(QThread):
             frame_index += 1
             origin_h, origin_w, ch = frame.shape
             img = QImage(frame.data, origin_w, origin_h, ch * origin_w, QImage.Format_BGR888)
+            base64 = self.image_to_base64(img)
+
             frame_particles = self.analyzer.analyze(frame_index, color_frame)
             self.sig_progress.emit(self.video_data.frame_count, frame_index, self.tr(constant.status_reading))
-            self.sig_frame_finished.emit(frame_index, img, frame_particles)
+            self.sig_frame_finished.emit(frame_index, base64, frame_particles)
         self.sig_all_finished.emit()
+
+    def image_to_base64(self, img: QImage) -> bytes:
+        quality = self.settings.int_value(default_settings.frame_quality)
+        byte_arr = QByteArray()
+        buffer = QBuffer(byte_arr)
+        buffer.open(QIODevice.WriteOnly)
+        img.save(buffer, 'jpg', quality)
+        return byte_arr.toBase64().data()
 
 
 class Analyzer(QObject):

@@ -138,6 +138,8 @@ class MainUi(object):
         self.hbox_bottom = QHBoxLayout()
         self.lb_frames = QLabel(self.widget)
         self.sl_frames = QSlider(Qt.Horizontal, self.widget)
+        self.sl_frames.setMinimum(1)
+        self.sl_frames.setMaximum(1)
         self.lb_frame_index = QLabel(self.widget)
         icon_play = QIcon('./images/play.svg')
         self.bt_play = QPushButton(icon_play, '', self.widget)

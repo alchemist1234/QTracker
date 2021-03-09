@@ -32,7 +32,7 @@ class MainWindow(QMainWindow):
         self.ui.bt_select_file.clicked.connect(self.select_file)
         self.ui.bt_settings.clicked.connect(self.show_settings)
         self.ui.bt_load_file.clicked.connect(self.load_file)
-        self.ui.bt_analyze.clicked.connect(self.analyze)
+        self.ui.sl_frames.valueChanged.connect(self.frame_changed)
 
     def init_file_loader(self):
         file_loader = VideoLoader(self.settings, self)
@@ -81,9 +81,10 @@ class MainWindow(QMainWindow):
         else:
             QMessageBox.warning(self.parent(), self.tr(constant.msg_error), self.tr(constant.msg_file_unselected))
 
-    @Slot()
-    def load_start(self):
-        pass
+    @Slot(int)
+    def load_start(self, frame_count):
+        self.ui.sl_frames.setMaximum(frame_count)
+        self.ui.lb_frame_index.setText(str(frame_count))
 
     @Slot(int, int, str)
     def progressing(self, total: int, current: int, info: str):
@@ -94,24 +95,18 @@ class MainWindow(QMainWindow):
             self.ui.status_bar.showMessage(info)
         self.ui.status_progress.setValue(val)
 
-    @Slot(int, QImage, dict)
-    def load_frame_finished(self, frame_index: int, frame_img: QImage, frame_particles: Dict[Any, Any]):
-        self.ui.scene.add_frame_image(frame_index, frame_img)
-        self.ui.scene.change_frame(frame_index)
-        print(frame_index, frame_img, frame_particles)
-        pass
+    @Slot(int, bytes, dict)
+    def load_frame_finished(self, frame_index: int, frame_base64: bytes, frame_particles: Dict[Any, Any]):
+        self.ui.scene.add_frame_image(frame_index, frame_base64)
+        if frame_index == 1:
+            self.ui.scene.change_frame(frame_index)
 
     @Slot(int, dict)
     def load_all_finished(self):
-        print(sys.getsizeof(self.ui.scene.frame_images))
         pass
 
-    def analyze(self):
-        if len(self.frames) > 0:
-            self.analyzer.frames = self.frames
-            self.analyzer.start()
-        else:
-            QMessageBox.warning(self.parent(), self.tr(constant.msg_error), self.tr(constant.msg_file_unselected))
+    def frame_changed(self, value):
+        self.ui.scene.change_frame(value)
 
     def file_selected(self):
         return self.file_path is not None and len(self.file_path) > 0

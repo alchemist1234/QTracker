@@ -32,6 +32,7 @@ from_frames = setting_item('analyze', 'from_frames', 1)
 to_frames = setting_item('analyze', 'to_frames', -1)
 file_path = setting_item('analyze', 'file_path', None)
 dir_path = setting_item('analyze', 'dir_path', None)
+frame_quality = setting_item('analyze', 'frame_quality', 80)
 
 particle_color = setting_item('display', 'particle_color', QColor(0, 255, 0))
 particle_size = setting_item('display', 'particle_size', 4)

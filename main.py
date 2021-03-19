@@ -140,6 +140,40 @@ class SettingDialog(QDialog):
     def update_color(self, label: ColorLabel, colors: List[QColor]):
         label.set_color(colors)
 
+    def accept(self):
+        # analyze
+        self.settings.set_value(default_settings.median_blur, self.ui.sb_median_blur.value())
+        self.settings.set_value(default_settings.gaussian_blur, self.ui.sb_gaussian_blur.value())
+        self.settings.set_value(default_settings.opening_size, self.ui.sb_opening_size.value())
+        self.settings.set_value(default_settings.closing_size, self.ui.sb_closing_size.value())
+        self.settings.set_value(default_settings.apply_hist_eq, self.ui.cb_apply_hist_eq.isChecked())
+        self.settings.set_value(default_settings.adaptive_hist_eq, self.ui.sb_adaptive_hist_eq.value())
+        self.settings.set_value(default_settings.bilateral_size, self.ui.sb_bilateral_filter_size.value())
+        self.settings.set_value(default_settings.bilateral_color, self.ui.sb_bilateral_filter_color.value())
+        self.settings.set_value(default_settings.bilateral_space, self.ui.sb_bilateral_filter_space.value())
+        self.settings.set_value(default_settings.search_radius, self.ui.sb_search_radius.value())
+        self.settings.set_value(default_settings.memory_frames, self.ui.sb_memory_frames.value())
+        self.settings.set_value(default_settings.minimum_area_for_detection, self.ui.le_minimum_detect_area.text())
+        self.settings.set_value(default_settings.maximum_area_for_detection, self.ui.le_maximum_detect_area.text())
+        self.settings.set_value(default_settings.threshold, self.ui.le_threshold.text())
+        self.settings.set_value(default_settings.derivative_order, self.ui.sb_derivative_order.value())
+        self.settings.set_value(default_settings.kernel_size, self.ui.cb_kernel_size.currentText())
+        self.settings.set_value(default_settings.split_circular_particles, self.ui.cb_split_particles.isChecked())
+        self.settings.set_value(default_settings.split_radius, self.ui.sb_particle_radius_for_split.value())
+        self.settings.set_value(default_settings.fit_to_screen, self.ui.cb_fit_to_screen.isChecked())
+        self.settings.set_value(default_settings.skip_frames, self.ui.sb_skip_frames.value())
+        self.settings.set_value(default_settings.from_frames, self.ui.le_from_frames.text())
+        self.settings.set_value(default_settings.to_frames, self.ui.le_to_frames.text())
+        # display
+        self.settings.set_value(default_settings.particle_color, self.ui.lb_particle_color_display.colors)
+        self.settings.set_value(default_settings.particle_size, self.ui.sb_particle_size.value())
+        self.settings.set_value(default_settings.mark_color, self.ui.lb_mark_color_display.colors)
+        self.settings.set_value(default_settings.mark_size, self.ui.sb_mark_size.value())
+        self.settings.set_value(default_settings.trajectory_color, self.ui.lb_trajectory_color_display.colors)
+        self.settings.set_value(default_settings.trajectory_size, self.ui.sb_trajectory_size.value())
+
+        super(SettingDialog, self).accept()
+
 
 class ColorWidget(QWidget):
     def __init__(self, parent: QListView, color: QColor, height: int):

@@ -95,7 +95,7 @@ class Analyzer(QObject):
             new_row[0, :, 0] = center
             ordered_centers = np.append(ordered_centers, new_row, axis=0)
 
-        memory_frames = self.settings.value(default_settings.memory_frames)
+        memory_frames = self.settings.int_value(default_settings.memory_frames)
         for center in ordered_centers:
             center_tuple = tuple(np.ravel(center).astype(int))
             for index, history_center in self.history_particles.items():
@@ -120,34 +120,34 @@ class Analyzer(QObject):
         else:
             image_gray = frame
 
-        if self.settings.value(default_settings.apply_hist_eq):
+        if self.settings.boolean_value(default_settings.apply_hist_eq):
             image_gray = cv2.equalizeHist(image_gray)
 
-        for j in range(self.settings.value(default_settings.adaptive_hist_eq)):
+        for j in range(self.settings.int_value(default_settings.adaptive_hist_eq)):
             clahe = cv2.createCLAHE(clipLimit=2, tileGridSize=(8, 8))
             image_gray = clahe.apply(image_gray)
 
-        bilateral_size = self.settings.value(default_settings.bilateral_size)
-        bilateral_color = self.settings.value(default_settings.bilateral_color)
-        bilateral_space = self.settings.value(default_settings.bilateral_space)
+        bilateral_size = self.settings.int_value(default_settings.bilateral_size)
+        bilateral_color = self.settings.int_value(default_settings.bilateral_color)
+        bilateral_space = self.settings.int_value(default_settings.bilateral_space)
         if bilateral_size != 0:
             image_gray = cv2.bilateralFilter(image_gray, bilateral_size, bilateral_color, bilateral_space)
 
-        image_gray = cv2.medianBlur(image_gray, self.settings.value(default_settings.median_blur))
-        image_gray = cv2.GaussianBlur(image_gray, (self.settings.value(default_settings.gaussian_blur),) * 2, 0)
+        image_gray = cv2.medianBlur(image_gray, self.settings.int_value(default_settings.median_blur))
+        image_gray = cv2.GaussianBlur(image_gray, (self.settings.int_value(default_settings.gaussian_blur),) * 2, 0)
         frame = image_gray.copy()
         frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
         return frame, image_gray
 
     def binary(self, image):
-        derivative_order = self.settings.value(default_settings.derivative_order)
+        derivative_order = self.settings.int_value(default_settings.derivative_order)
         sobel_x = self.get_sobel(image, derivative_order, 0)
         sobel_y = self.get_sobel(image, 0, derivative_order)
         sobel_both = cv2.bitwise_or(sobel_x, sobel_y)
         return sobel_both
 
     def get_sobel(self, image, x, y):
-        kernel_size = self.settings.value(default_settings.kernel_size)
+        kernel_size = self.settings.int_value(default_settings.kernel_size)
         sobel = cv2.Sobel(image, cv2.CV_64F, x, y, kernel_size)
         sobel = np.absolute(sobel)
         sobel = sobel - sobel.min()
@@ -157,9 +157,9 @@ class Analyzer(QObject):
         return sobel
 
     def morphology(self, image):
-        kernel = np.ones((self.settings.value(default_settings.closing_size),) * 2, np.uint8)
+        kernel = np.ones((self.settings.int_value(default_settings.closing_size),) * 2, np.uint8)
         image = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)
-        kernel = np.ones((self.settings.value(default_settings.opening_size),) * 2, np.uint8)
+        kernel = np.ones((self.settings.int_value(default_settings.opening_size),) * 2, np.uint8)
         image = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
         return image
 
@@ -173,20 +173,23 @@ class Analyzer(QObject):
             if judgement == Analyzer.Judgement.TRUE.value:
                 m_list.append(moment)
                 cnt_list.append(cnt)
-            elif judgement >> 1:
-                cnt_list_split = Analyzer.split_particles_roi(self.settings.value(default_settings.split_radius), cnt)
-                if len(cnt_list_split) > 1:
-                    for c in cnt_list_split:
-                        m_list.append(cv2.moments(c))
-                        cnt_list.append(c)
-                elif len(cnt_list_split) == 1 and judgement & 1:
-                    m_list.append(moment)
-                    cnt_list.append(cnt_list_split[0])
+            # elif judgement >> 1:
+            #     cnt_list_split = Analyzer.split_particles_roi(self.settings.int_value(default_settings.split_radius),
+            #                                                   cnt)
+            #     if len(cnt_list_split) > 1:
+            #         for c in cnt_list_split:
+            #             print(c)
+            #             print(c.shape)
+            #             m_list.append(cv2.moments(c))
+            #             cnt_list.append(c)
+            #     elif len(cnt_list_split) == 1 and judgement & 1:
+            #         m_list.append(moment)
+            #         cnt_list.append(cnt_list_split[0])
         return m_list, cnt_list
 
     def particle_test(self, contours):
-        max_area = self.settings.value(default_settings.maximum_area_for_detection)
-        min_area = self.settings.value(default_settings.minimum_area_for_detection)
+        max_area = self.settings.int_value(default_settings.maximum_area_for_detection)
+        min_area = self.settings.int_value(default_settings.minimum_area_for_detection)
         moments = cv2.moments(contours)
         area = moments['m00']
 
@@ -194,11 +197,11 @@ class Analyzer(QObject):
         if min_area < area <= max_area:
             judgement = Analyzer.Judgement.TRUE.value
 
-        if self.settings.value(default_settings.split_circular_particles):
+        if self.settings.boolean_value(default_settings.split_circular_particles):
             r_approx = np.sqrt(area / np.pi)
-            is_touching = self.settings.value(default_settings.split_radius) <= r_approx
+            is_touching = self.settings.int_value(default_settings.split_radius) * 1.05 <= r_approx
             if is_touching:
-                judgement = judgement | 2
+                judgement = judgement | 0b_10
         return judgement, moments
 
     @staticmethod
@@ -217,7 +220,7 @@ class Analyzer(QObject):
         cv2.drawContours(roi_touching, [cnt], 0, 255, -1)
 
         ff = 3
-        roi_touching = cv2.resize(roi_touching, dsize=None, fx=ff, fy=ff, interpolation=cv2.INTER_LINEAR)
+        roi_touching = cv2.resize(roi_touching, None, fx=ff, fy=ff, interpolation=cv2.INTER_LINEAR)
         radius = ff * radius
         cnt_list_split = Analyzer.split_particles(roi_touching, radius)
         cnt_list_split = [c / ff + np.array([x, y]) for c in cnt_list_split]

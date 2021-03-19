@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, Callable
 
 from PySide6.QtCore import *
 from PySide6.QtGui import *
@@ -141,12 +141,14 @@ class MainUi(object):
         self.sl_frames.setMinimum(1)
         self.sl_frames.setMaximum(1)
         self.lb_frame_index = QLabel(self.widget)
+        self.lcd_current_frame = QLCDNumber(self.widget)
         icon_play = QIcon('./images/play.svg')
         self.bt_play = QPushButton(icon_play, '', self.widget)
         self.ed_filter = QLineEdit(self.widget)
         self.hbox_bottom.addWidget(self.lb_frames)
         self.hbox_bottom.addWidget(self.sl_frames)
         self.hbox_bottom.addWidget(self.lb_frame_index)
+        self.hbox_bottom.addWidget(self.lcd_current_frame)
         self.hbox_bottom.addWidget(self.bt_play)
         self.hbox_bottom.addWidget(self.ed_filter)
         self.vbox_widget.addLayout(self.hbox_bottom)
@@ -218,6 +220,10 @@ class SettingUi(object):
 
         self.lb_median_blur = QLabel(dialog)
         self.sb_median_blur = QSpinBox(dialog)
+        self.sb_median_blur.setRange(1, 99)
+        self.sb_median_blur.setSingleStep(2)
+        self.sb_median_blur.editingFinished.connect(
+            lambda: spinbox_validation(self.sb_median_blur, is_odd, minus_one))
         self.lb_opening_size = QLabel(dialog)
         self.sb_opening_size = QSpinBox(dialog)
         hbox_img_treat1 = QHBoxLayout()
@@ -228,6 +234,10 @@ class SettingUi(object):
 
         self.lb_gaussian_blur = QLabel(dialog)
         self.sb_gaussian_blur = QSpinBox(dialog)
+        self.sb_gaussian_blur.setRange(1, 99)
+        self.sb_gaussian_blur.setSingleStep(2)
+        self.sb_gaussian_blur.editingFinished.connect(
+            lambda: spinbox_validation(self.sb_gaussian_blur, is_odd, minus_one))
         self.lb_closing_size = QLabel(dialog)
         self.sb_closing_size = QSpinBox(dialog)
         hbox_img_treat2 = QHBoxLayout()
@@ -266,22 +276,24 @@ class SettingUi(object):
         self.lb_search_radius = QLabel(dialog)
         self.sb_search_radius = QSpinBox(dialog)
         self.lb_minimum_detect_area = QLabel(dialog)
-        self.sb_minimum_detect_area = QSpinBox(dialog)
+        self.le_minimum_detect_area = QLineEdit(dialog)
+        self.le_minimum_detect_area.setValidator(QIntValidator(0, 999999, self.le_minimum_detect_area))
         hbox_detection_tracking1 = QHBoxLayout()
         hbox_detection_tracking1.addWidget(self.lb_search_radius)
         hbox_detection_tracking1.addWidget(self.sb_search_radius)
         hbox_detection_tracking1.addWidget(self.lb_minimum_detect_area)
-        hbox_detection_tracking1.addWidget(self.sb_minimum_detect_area)
+        hbox_detection_tracking1.addWidget(self.le_minimum_detect_area)
 
         self.lb_memory_frames = QLabel(dialog)
         self.sb_memory_frames = QSpinBox(dialog)
         self.lb_maximum_detect_area = QLabel(dialog)
-        self.sb_maximum_detect_area = QSpinBox(dialog)
+        self.le_maximum_detect_area = QLineEdit(dialog)
+        self.le_maximum_detect_area.setValidator(QIntValidator(0, 999999, self.le_maximum_detect_area))
         hbox_detection_tracking2 = QHBoxLayout()
         hbox_detection_tracking2.addWidget(self.lb_memory_frames)
         hbox_detection_tracking2.addWidget(self.sb_memory_frames)
         hbox_detection_tracking2.addWidget(self.lb_maximum_detect_area)
-        hbox_detection_tracking2.addWidget(self.sb_maximum_detect_area)
+        hbox_detection_tracking2.addWidget(self.le_maximum_detect_area)
 
         vbox_detection_tracking.addLayout(hbox_detection_tracking1)
         vbox_detection_tracking.addLayout(hbox_detection_tracking2)
@@ -291,18 +303,20 @@ class SettingUi(object):
         vbox_gradient = QVBoxLayout(self.gb_gradient)
 
         self.lb_threshold = QLabel(dialog)
-        self.sb_threshold = QSpinBox(dialog)
+        self.le_threshold = QLineEdit(dialog)
         self.lb_derivative_order = QLabel(dialog)
         self.sb_derivative_order = QSpinBox(dialog)
+        self.sb_derivative_order.setRange(1, 5)
         self.lb_kernel_size = QLabel(dialog)
-        self.sb_kernel_size = QSpinBox(dialog)
+        self.cb_kernel_size = QComboBox(dialog)
+        self.cb_kernel_size.addItems(['-1', '1', '3', '5', '7'])
         hbox_gradient = QHBoxLayout()
         hbox_gradient.addWidget(self.lb_threshold)
-        hbox_gradient.addWidget(self.sb_threshold)
+        hbox_gradient.addWidget(self.le_threshold)
         hbox_gradient.addWidget(self.lb_derivative_order)
         hbox_gradient.addWidget(self.sb_derivative_order)
         hbox_gradient.addWidget(self.lb_kernel_size)
-        hbox_gradient.addWidget(self.sb_kernel_size)
+        hbox_gradient.addWidget(self.cb_kernel_size)
 
         vbox_gradient.addLayout(hbox_gradient)
 
@@ -333,14 +347,16 @@ class SettingUi(object):
         hbox_video1.addWidget(self.sb_skip_frames)
 
         self.lb_from_frames = QLabel(dialog)
-        self.sb_from_frames = QSpinBox(dialog)
+        self.le_from_frames = QLineEdit('', dialog)
         self.lb_to_frames = QLabel(dialog)
-        self.sb_to_frames = QSpinBox(dialog)
+        self.le_to_frames = QLineEdit('', dialog)
+        self.le_from_frames.setValidator(QIntValidator(1, 9999, self.le_from_frames))
+        self.le_to_frames.setValidator(QIntValidator(1, 9999, self.le_to_frames))
         hbox_video2 = QHBoxLayout()
         hbox_video2.addWidget(self.lb_from_frames)
-        hbox_video2.addWidget(self.sb_from_frames)
+        hbox_video2.addWidget(self.le_from_frames)
         hbox_video2.addWidget(self.lb_to_frames)
-        hbox_video2.addWidget(self.sb_to_frames)
+        hbox_video2.addWidget(self.le_to_frames)
 
         vbox_videos.addLayout(hbox_video1)
         vbox_videos.addLayout(hbox_video2)
@@ -433,18 +449,18 @@ class SettingUi(object):
         self.sb_bilateral_filter_color.setValue(self.settings.int_value(default_settings.bilateral_color))
         self.sb_bilateral_filter_space.setValue(self.settings.int_value(default_settings.bilateral_space))
         self.sb_search_radius.setValue(self.settings.int_value(default_settings.search_radius))
-        self.sb_minimum_detect_area.setValue(self.settings.int_value(default_settings.minimum_area_for_detection))
-        self.sb_maximum_detect_area.setValue(self.settings.int_value(default_settings.maximum_area_for_detection))
+        self.le_minimum_detect_area.setText(self.settings.str_value(default_settings.minimum_area_for_detection))
+        self.le_maximum_detect_area.setText(self.settings.str_value(default_settings.maximum_area_for_detection))
         self.sb_memory_frames.setValue(self.settings.int_value(default_settings.memory_frames))
-        self.sb_threshold.setValue(self.settings.int_value(default_settings.threshold))
+        self.le_threshold.setText(self.settings.str_value(default_settings.threshold))
         self.sb_derivative_order.setValue(self.settings.int_value(default_settings.derivative_order))
-        self.sb_kernel_size.setValue(self.settings.int_value(default_settings.kernel_size))
+        self.cb_kernel_size.setCurrentText(self.settings.str_value(default_settings.kernel_size))
         self.cb_split_particles.setChecked(self.settings.boolean_value(default_settings.split_circular_particles))
         self.sb_particle_radius_for_split.setValue(self.settings.int_value(default_settings.split_radius))
         self.cb_fit_to_screen.setChecked(self.settings.boolean_value(default_settings.fit_to_screen))
         self.sb_skip_frames.setValue(self.settings.int_value(default_settings.skip_frames))
-        self.sb_from_frames.setValue(self.settings.int_value(default_settings.from_frames))
-        self.sb_to_frames.setValue(self.settings.int_value(default_settings.to_frames))
+        self.le_from_frames.setText(self.settings.str_value(default_settings.from_frames))
+        self.le_to_frames.setText(self.settings.str_value(default_settings.to_frames))
         self.update_color_label(self.lb_particle_color_display, default_settings.particle_color)
         self.sb_particle_size.setValue(self.settings.int_value(default_settings.particle_size))
         self.update_color_label(self.lb_mark_color_display, default_settings.mark_color)
@@ -532,3 +548,16 @@ class ColorWidgetUi(object):
         self.layout.addWidget(self.lb_color)
         self.layout.addWidget(self.lb_color_name)
         self.layout.addItem(QSpacerItem(20, height, QSizePolicy.Minimum, QSizePolicy.Expanding))
+
+
+def is_odd(value: int):
+    return value % 2 == 1
+
+
+def minus_one(value: int):
+    return value - 1
+
+
+def spinbox_validation(spinbox: QSpinBox, cond: Callable, correct_func: Callable):
+    if not cond(spinbox.value()):
+        spinbox.setValue(correct_func(spinbox.value()))

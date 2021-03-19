@@ -10,7 +10,12 @@ class VideoView(QGraphicsView):
         super().__init__(parent)
         self.fixed_widgets = dict()
 
-    def add_fixed_widget(self, widget: QWidget, alignment):
+    def add_fixed_widget(self, widget: QWidget, alignment: Qt.AlignmentFlag):
+        """
+        添加固定控件
+        :param widget: 控件
+        :param alignment: 对齐方式
+        """
         widget.setParent(self.viewport())
         self.fixed_widgets[widget] = alignment
 

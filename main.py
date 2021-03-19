@@ -1,17 +1,16 @@
-import sys
 import os
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Tuple
 
-import numpy as np
 from PySide6.QtCore import Qt, Slot, QModelIndex, QSize, Signal
-from PySide6.QtGui import QFontMetrics, QResizeEvent, QColor, QMouseEvent, QPixmap, QImage
+from PySide6.QtGui import QFontMetrics, QResizeEvent, QColor, QMouseEvent
 from PySide6.QtWidgets import *
 
 import constant
 import default_settings
 from settings import Settings
 from ui import MainUi, SettingUi, ColorEditorUi, ColorWidgetUi, ColorLabel
-from worker import VideoLoader, Analyzer
+from worker import VideoLoader
+from utils import split_indexes_text
 
 
 class MainWindow(QMainWindow):
@@ -19,6 +18,7 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
         # ui
         self.settings = Settings('settings.ini')
+        self.settings.set_value(default_settings.index_filter, [])
         self.ui = MainUi(self, self.settings)
         self.file_path = None
 
@@ -33,8 +33,12 @@ class MainWindow(QMainWindow):
         self.ui.bt_settings.clicked.connect(self.show_settings)
         self.ui.bt_load_file.clicked.connect(self.load_file)
         self.ui.sl_frames.valueChanged.connect(self.frame_changed)
+        self.ui.le_filter.textChanged.connect(self.filter_changed)
 
     def init_file_loader(self):
+        """
+        初始化视频加载器
+        """
         file_loader = VideoLoader(self.settings, self)
         file_loader.sig_start.connect(self.load_start)
         file_loader.sig_progress.connect(self.progressing)
@@ -42,15 +46,19 @@ class MainWindow(QMainWindow):
         file_loader.sig_all_finished.connect(self.load_all_finished)
         return file_loader
 
-    def init_analyzer(self):
-        analyzer = Analyzer(self.settings, self)
-        analyzer.sig_start.connect(self.analyze_start)
-        analyzer.sig_progress.connect(self.progressing)
-        analyzer.sig_frame_finished.connect(self.analyze_frame_finished)
-        analyzer.sig_all_finished.connect(self.analyze_all_finished)
-        return analyzer
+    # def init_analyzer(self):
+    #     analyzer = Analyzer(self.settings, self)
+    #     analyzer.sig_start.connect(self.analyze_start)
+    #     analyzer.sig_progress.connect(self.progressing)
+    #     analyzer.sig_frame_finished.connect(self.analyze_frame_finished)
+    #     analyzer.sig_all_finished.connect(self.analyze_all_finished)
+    #     return analyzer
 
     def select_file(self):
+        """
+        选择文件
+        点击选择文件触发
+        """
         file_path = self.settings.value(default_settings.dir_path)
         file_path, _ = QFileDialog.getOpenFileName(self, self.tr(constant.msg_select_file), file_path,
                                                    'AVI Files (*.avi)')
@@ -61,10 +69,20 @@ class MainWindow(QMainWindow):
         self.update_file_path()
 
     def show_settings(self):
+        """
+        显示设置窗口
+        点击设置触发
+        """
         dialog = SettingDialog(self.settings)
-        dialog.exec_()
+        ret = dialog.exec_()
+        if ret:
+            self.ui.scene.update_frame()
 
     def update_file_path(self):
+        """
+        更新文件路径
+        选择文件结束后、窗口大小改变后触发
+        """
         if self.file_selected():
             font_metrics = QFontMetrics(self.ui.lb_file_path.font())
             elide_text = font_metrics.elidedText(self.file_path, Qt.ElideMiddle, self.ui.lb_file_path.width())
@@ -75,19 +93,41 @@ class MainWindow(QMainWindow):
             self.ui.lb_file_path.setToolTip(self.tr(constant.msg_file_unselected))
 
     def load_file(self):
+        """
+        加载(分析)视频
+        点击分析按钮触发
+        """
         if self.file_selected():
             self.file_loader.set_file(self.file_path)
             self.file_loader.start()
         else:
             QMessageBox.warning(self.parent(), self.tr(constant.msg_error), self.tr(constant.msg_file_unselected))
 
+    def filter_changed(self):
+        text = self.ui.le_filter.text()
+        selected_indexes = split_indexes_text(text)
+        self.settings.set_value(default_settings.index_filter, list(selected_indexes))
+        self.ui.scene.update_frame()
+
     @Slot(int)
-    def load_start(self, frame_count):
+    def load_start(self, frame_count: int):
+        """
+        视频开始加载时触发
+        :param frame_count: 总帧数
+        """
         self.ui.sl_frames.setMaximum(frame_count)
         self.ui.lb_frame_index.setText(str(frame_count))
 
     @Slot(int, int, str)
     def progressing(self, total: int, current: int, info: str):
+        """
+        更新进度条
+        分析完每一帧后触发
+
+        :param total: 最大值
+        :param current: 当前值
+        :param info: 状态栏显示信息
+        """
         val = int(current / total * self.ui.status_progress.maximum())
         if val == self.ui.status_progress.maximum():
             self.ui.status_bar.showMessage(self.tr(constant.status_ready))
@@ -96,7 +136,14 @@ class MainWindow(QMainWindow):
         self.ui.status_progress.setValue(val)
 
     @Slot(int, bytes, dict)
-    def load_frame_finished(self, frame_index: int, frame_base64: bytes, frame_particles: Dict[Any, Any]):
+    def load_frame_finished(self, frame_index: int, frame_base64: bytes, frame_particles: Dict[int, Tuple[int, int]]):
+        """
+        更新scene数据
+        分析完每一帧后触发
+        :param frame_index: 帧索引
+        :param frame_base64: 帧base64数据
+        :param frame_particles:  粒子数据{粒子索引: (x, y)}
+        """
         self.ui.scene.add_frame_image(frame_index, frame_base64)
         self.ui.scene.add_particle_pos(frame_index, frame_particles)
         if frame_index == 1:
@@ -104,15 +151,29 @@ class MainWindow(QMainWindow):
 
     @Slot(int, dict)
     def load_all_finished(self):
+        """
+        所有帧分析完后触发
+        """
         pass
 
     def frame_changed(self, value):
+        """
+        切换帧, 更新Scene
+        帧滑块值变化时触发
+        :param value: 帧数
+        """
         self.ui.scene.update_frame(value)
 
     def file_selected(self):
+        """
+        是否已选择文件
+        """
         return self.file_path is not None and len(self.file_path) > 0
 
     def resizeEvent(self, event: QResizeEvent):
+        """
+        窗口大小改变事件
+        """
         self.settings.set_value(default_settings.main_width, event.size().width())
         self.settings.set_value(default_settings.main_height, event.size().height())
         self.update_file_path()

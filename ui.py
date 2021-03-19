@@ -144,13 +144,13 @@ class MainUi(object):
         self.lcd_current_frame = QLCDNumber(self.widget)
         icon_play = QIcon('./images/play.svg')
         self.bt_play = QPushButton(icon_play, '', self.widget)
-        self.ed_filter = QLineEdit(self.widget)
+        self.le_filter = QLineEdit(self.widget)
         self.hbox_bottom.addWidget(self.lb_frames)
         self.hbox_bottom.addWidget(self.sl_frames)
         self.hbox_bottom.addWidget(self.lb_frame_index)
         self.hbox_bottom.addWidget(self.lcd_current_frame)
         self.hbox_bottom.addWidget(self.bt_play)
-        self.hbox_bottom.addWidget(self.ed_filter)
+        self.hbox_bottom.addWidget(self.le_filter)
         self.vbox_widget.addLayout(self.hbox_bottom)
 
         # Status Bar
@@ -183,7 +183,7 @@ class MainUi(object):
         self.bt_combine.setToolTip(constant.main_widget_combine)
         self.lb_frames.setText(constant.main_widget_frames)
         self.bt_play.setToolTip(constant.main_widget_play)
-        self.ed_filter.setToolTip(constant.main_widget_filter)
+        self.le_filter.setToolTip(constant.main_widget_filter)
 
     @property
     def bt_select(self):

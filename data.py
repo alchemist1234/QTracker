@@ -9,11 +9,19 @@ from settings import Settings
 
 
 class VideoData(object):
+    """
+    视频基础数据
+    """
     def __init__(self):
+        # 文件路径
         self._file_path = None
+        # FPS
         self._fps = 0
+        # 视频宽度
         self._width = 0
+        # 视频高度
         self._height = 0
+        # 总帧数
         self._frames = 0
 
     @property
@@ -151,17 +159,23 @@ class ParticleGroup(QGraphicsItemGroup):
 
 
 class ParticleData(object):
-
+    """
+    粒子数据
+    """
     def __init__(self, settings: Settings, particle_pos: Dict[int, Tuple[int, int]]):
         self.settings = settings
         self.setting_helper = SettingWidgetHelper(settings)
         self._particle_pos = particle_pos
 
     @property
-    def particle_pos(self):
+    def particle_pos(self) -> Dict[int, Tuple[int, int]]:
         return self._particle_pos
 
-    def particle_group_items(self):
+    def particle_group_items(self) -> Dict[int, ParticleGroup]:
+        """
+        获取粒子+标签字典
+        :return: {粒子索引: ParticleGroup}
+        """
         groups = {}
         for index, pos in self._particle_pos.items():
             if self.setting_helper.visible(default_settings.show_particle, index):

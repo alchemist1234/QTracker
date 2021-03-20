@@ -154,6 +154,7 @@ class MainWindow(QMainWindow):
         """
         所有帧分析完后触发
         """
+        self.ui.scene.calc_trajectory()
         pass
 
     def frame_changed(self, value):

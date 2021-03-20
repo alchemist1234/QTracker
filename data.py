@@ -1,4 +1,5 @@
 from typing import Dict, Tuple
+import math
 
 from PySide6.QtCore import Qt, QPoint
 from PySide6.QtGui import QBrush, QPen, QColor, QFont
@@ -12,6 +13,7 @@ class VideoData(object):
     """
     视频基础数据
     """
+
     def __init__(self):
         # 文件路径
         self._file_path = None
@@ -97,6 +99,20 @@ class SettingWidgetHelper(object):
             brush.setColor(colors[index % len(colors)])
             return brush
 
+    def trajectory_pen(self, index: int):
+        if self.settings.boolean_value(default_settings.same_trajectory_color_with_particle):
+            return self.particle_pen(index)
+        else:
+            pen = QPen()
+            colors = self.settings.list_value(default_settings.trajectory_color)
+            colors = [QColor(c) for c in colors]
+            pen.setStyle(Qt.SolidLine)
+            pen.setColor(colors[index % len(colors)])
+            pen.setWidth(self.settings.int_value(default_settings.trajectory_size))
+            pen.setJoinStyle(Qt.RoundJoin)
+            pen.setCapStyle(Qt.RoundCap)
+            return pen
+
     def visible(self, setting_item: default_settings.setting_item, index: int):
         index_filter = self.settings.list_value(default_settings.index_filter)
         return self.settings.boolean_value(setting_item) and (index in index_filter or len(index_filter) == 0)
@@ -130,7 +146,9 @@ class MarkItem(QGraphicsSimpleTextItem):
         self.index = index
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
         self.setFlag(QGraphicsItem.ItemIsMovable, True)
-        self.setFont(QFont(self.settings.value(default_settings.mark_font)))
+        font = QFont(self.settings.value(default_settings.mark_font))
+        font.setPixelSize(self.settings.int_value(default_settings.mark_size))
+        self.setFont(font)
         self.setBrush(self.settings_helper.mark_brush(index))
         radius = self.settings.int_value(default_settings.particle_size)
         x = center_x - radius - self.boundingRect().width()
@@ -158,18 +176,39 @@ class ParticleGroup(QGraphicsItemGroup):
         self.setFlag(QGraphicsItem.ItemIsMovable, True)
 
 
+class TrajectoryItem(QGraphicsLineItem):
+    def __init__(self, settings: Settings, frame_index: int, index: int, x1, y1, x2, y2, frame_interval):
+        super().__init__(x1, y1, x2, y2)
+        self.settings = settings
+        self.frame_index = frame_index
+        self.index = index
+        self.settings_helper = SettingWidgetHelper(settings)
+        self.distance = math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+        self.frame_interval = frame_interval
+        self.setPen(self.settings_helper.trajectory_pen(index))
+
+
 class ParticleData(object):
     """
     粒子数据
     """
+
     def __init__(self, settings: Settings, particle_pos: Dict[int, Tuple[int, int]]):
         self.settings = settings
         self.setting_helper = SettingWidgetHelper(settings)
         self._particle_pos = particle_pos
+        self._trajectory_lines = {}
 
     @property
     def particle_pos(self) -> Dict[int, Tuple[int, int]]:
         return self._particle_pos
+
+    @property
+    def trajectory_lines(self) -> Dict[int, Tuple[int, int, int, int, int]]:
+        return self._trajectory_lines
+
+    def update_line(self, index, x1, y1, x2, y2, frame_interval):
+        self._trajectory_lines[index] = (x1, y1, x2, y2, frame_interval)
 
     def particle_group_items(self) -> Dict[int, ParticleGroup]:
         """
@@ -182,3 +221,10 @@ class ParticleData(object):
                 particle_group = ParticleGroup(self.settings, index, pos[0], pos[1])
                 groups[index] = particle_group
         return groups
+
+    def trajectory_items(self, frame_index: int) -> Dict[int, QGraphicsLineItem]:
+        items = {}
+        for index, (x1, y1, x2, y2, frame_interval) in self._trajectory_lines.items():
+            item = TrajectoryItem(self.settings, frame_index, index, x1, y1, x2, y2, frame_interval)
+            items[index] = item
+        return items

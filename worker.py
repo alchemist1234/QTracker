@@ -1,17 +1,21 @@
 import sys
+import os
 from collections import namedtuple
 from typing import List, Dict, Set
 from enum import Enum
+import time
 
-from PySide6.QtCore import QThread, Signal, QObject, QByteArray, QBuffer, QIODevice
-from PySide6.QtGui import QImage
+from PySide6.QtCore import QThread, Signal, QObject, QByteArray, QBuffer, QIODevice, Slot, QTimer
+from PySide6.QtGui import QImage, QPainter
 from PySide6.QtWidgets import QMessageBox
 import cv2
 import numpy as np
+
 from data import VideoData
 from settings import Settings
 import constant
 import default_settings
+from scene import VideoScene
 
 
 class VideoLoader(QThread):
@@ -27,13 +31,14 @@ class VideoLoader(QThread):
         self.vid = None
         self.analyzer = Analyzer(settings, self)
 
-    def set_file(self, file_path: str):
+    def set_file(self, file_path: str) -> VideoData:
         self.video_data.file_path = file_path
         self.vid = cv2.VideoCapture(file_path)
         self.video_data.width = int(self.vid.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.video_data.height = int(self.vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.video_data.fps = int(self.vid.get(cv2.CAP_PROP_FPS))
         self.video_data.frame_count = int(self.vid.get(cv2.CAP_PROP_FRAME_COUNT))
+        return self.video_data
 
     def run(self):
         self.sig_start.emit(self.video_data.frame_count)
@@ -247,12 +252,68 @@ class Analyzer(QObject):
         y, x = np.ogrid[-r: r + 1, -r: r + 1]
         return (y * y + x * x <= r * r).astype(np.uint8)
 
-#
-# class VideoExporter(QThread):
-#     def __init__(self):
-#         super().__init__()
-#
-#
-# class TrajectoryGenerator(QThread):
-#     def __init__(self):
-#         super().__init__()
+
+class VideoExporter(QObject):
+    default_file_ext = '.avi'
+    codes_map = {
+        '.avi': 'XVID',
+        '.flv': 'FLV1',
+        '.mp4': 'X264',
+        '.ogv': 'THEO'
+    }
+    sig_export_start = Signal()
+    sig_export_frame_updated = Signal(int, np.ndarray)
+    sig_export_frame = Signal(int)
+    sig_export_finish = Signal()
+
+    def __init__(self, scene: VideoScene):
+        super().__init__()
+        self._file_path = None
+        self._file_name = None
+        self._file_ext = None
+        self._video_data = None
+        self.scene = scene
+        self.writer = cv2.VideoWriter()
+        # self.sig_export_frame_updated.connect(self.write_data)
+
+    @property
+    def file_path(self):
+        return self._file_path
+
+    @file_path.setter
+    def file_path(self, file_path: str):
+        self._file_path = file_path
+        self._file_name, self._file_ext = os.path.splitext(file_path)
+
+    @property
+    def video_data(self):
+        return self._video_data
+
+    @video_data.setter
+    def video_data(self, video_data: VideoData):
+        self._video_data = video_data
+
+    def open_writer(self):
+        fourcc = VideoExporter.codes_map[self._file_ext]
+        self.writer.open(self._file_path, cv2.VideoWriter.fourcc(*fourcc), self.video_data.fps,
+                         (self.video_data.width, self.video_data.height), True)
+
+    def release_writer(self):
+        self.writer.release()
+
+    def export_arr(self, frame_index: int):
+        self.scene.update_frame(frame_index)
+        img = QImage(self.video_data.width, self.video_data.height, QImage.Format_ARGB32)
+        painter = QPainter()
+        painter.begin(img)
+        self.scene.render(painter)
+        painter.end()
+        shape = (img.height(), img.bytesPerLine() * 8 // img.depth(), 4)
+        ptr = img.bits()
+        arr = np.array(ptr, dtype=np.uint8).reshape(shape)
+        arr = arr[..., :3]
+        return arr
+
+    @Slot(int, np.ndarray)
+    def write_data(self, arr: np.ndarray):
+        self.writer.write(arr)

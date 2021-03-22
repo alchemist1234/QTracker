@@ -7,10 +7,11 @@ from PySide6.QtWidgets import *
 
 import constant
 import default_settings
+from data import VideoData
 from settings import Settings
 from ui import MainUi, SettingUi, ColorEditorUi, ColorWidgetUi, ColorLabel
-from worker import VideoLoader
 from utils import split_indexes_text
+from worker import VideoLoader, VideoExporter
 
 
 class MainWindow(QMainWindow):
@@ -21,17 +22,22 @@ class MainWindow(QMainWindow):
         self.settings.set_value(default_settings.index_filter, [])
         self.ui = MainUi(self, self.settings)
         self.file_path = None
+        self.waiting_dialog = None
 
         # data
         self.frames = {}
+        self.scene_for_export = None
+        self.video_data = VideoData()
 
         # thread
         self.file_loader = self.init_file_loader()
+        self.video_exporter = VideoExporter(self.ui.scene)
 
         # connect
         self.ui.bt_select_file.clicked.connect(self.select_file)
         self.ui.bt_settings.clicked.connect(self.show_settings)
         self.ui.bt_load_file.clicked.connect(self.load_file)
+        self.ui.bt_export.clicked.connect(self.export_video)
         self.ui.sl_frames.valueChanged.connect(self.frame_changed)
         self.ui.le_filter.textChanged.connect(self.filter_changed)
 
@@ -98,7 +104,7 @@ class MainWindow(QMainWindow):
         点击分析按钮触发
         """
         if self.file_selected():
-            self.file_loader.set_file(self.file_path)
+            self.video_data = self.file_loader.set_file(self.file_path)
             self.file_loader.start()
         else:
             QMessageBox.warning(self.parent(), self.tr(constant.msg_error), self.tr(constant.msg_file_unselected))
@@ -108,6 +114,30 @@ class MainWindow(QMainWindow):
         selected_indexes = split_indexes_text(text)
         self.settings.set_value(default_settings.index_filter, list(selected_indexes))
         self.ui.scene.update_frame()
+
+    def export_video(self):
+        file_dir = ''
+        file_name, file_type = QFileDialog.getSaveFileName(self, 'Save Video', file_dir, 'AVI Files (*.avi)')
+        file_path = os.path.join(file_dir, file_name)
+        if len(file_path) > 0:
+            frame_indexes = self.ui.scene.sorted_frame_indexes()
+            self.waiting_dialog = QProgressDialog(self)
+            self.waiting_dialog.setWindowTitle(self.tr(constant.msg_waiting))
+            self.waiting_dialog.setLabelText(self.tr(constant.msg_exporting))
+            self.waiting_dialog.setMinimumDuration(100)
+            self.waiting_dialog.setWindowModality(Qt.WindowModal)
+            self.waiting_dialog.setRange(0, frame_indexes[-1])
+            # self.waiting_dialog.setModal(True)
+            self.waiting_dialog.show()
+            self.video_exporter.file_path = file_path
+            self.video_exporter.video_data = self.video_data
+            self.video_exporter.open_writer()
+            for frame_index in frame_indexes:
+                arr = self.video_exporter.export_arr(frame_index)
+                self.video_exporter.write_data(arr)
+                self.waiting_dialog.setValue(frame_index)
+            self.video_exporter.release_writer()
+            self.waiting_dialog.close()
 
     @Slot(int)
     def load_start(self, frame_count: int):

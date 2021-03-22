@@ -1,8 +1,10 @@
 from typing import Dict, Tuple, Optional
+import time
 
 from PySide6.QtCore import QByteArray
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QImage, QPixmap, QPainter
 from PySide6.QtWidgets import *
+import numpy as np
 
 from data import ParticleData, SettingWidgetHelper
 from settings import Settings
@@ -21,11 +23,24 @@ class VideoScene(QGraphicsScene):
         self._particle_data = {}
         # 粒子+标签 Item
         self.particle_group_items = {}
+        # 轨迹Item
         self.trajectory_items = {}
+        # 已更新轨迹的帧
         self.updated_frame_index = set()
+        # 当前帧图像对象
         self.current_frame_item = QGraphicsPixmapItem(None)
+        # 当前帧索引
         self.current_frame_index = 0
+        self.config_changed = False
         self.addItem(self.current_frame_item)
+
+        # np.ndarray 用于缓存导出图像
+        self.export_frame_dict = {}
+
+    def sorted_frame_indexes(self):
+        frame_indexes = list(self._frame_base64_dict.keys())
+        frame_indexes.sort()
+        return frame_indexes
 
     def clear(self):
         """
@@ -109,7 +124,8 @@ class VideoScene(QGraphicsScene):
         :param frame_index: 帧索引
         :return: None
         """
-        frame_index_to_be_updated = {i for i in set(self._particle_data.keys()) - self.updated_frame_index if i <= frame_index}
+        frame_index_to_be_updated = {i for i in set(self._particle_data.keys()) - self.updated_frame_index if
+                                     i <= frame_index}
 
         for iter_frame_index in frame_index_to_be_updated:
             if iter_frame_index in self.trajectory_items:
@@ -127,7 +143,10 @@ class VideoScene(QGraphicsScene):
     def update_trajectory_visibility(self, frame_index: int):
         for iter_frame_index, d in self.trajectory_items.items():
             for index, item in d.items():
-                if iter_frame_index <= frame_index and self.setting_helper.visible(default_settings.show_trajectory, index):
+                if iter_frame_index <= frame_index and \
+                        self.setting_helper.visible(default_settings.show_trajectory, index):
+                    if self.config_changed:
+                        item.update_pen()
                     item.setVisible(True)
                 else:
                     item.setVisible(False)
@@ -143,3 +162,20 @@ class VideoScene(QGraphicsScene):
             self.update_frame_image(frame_index)
             self.update_particle(frame_index)
             self.update_trajectory(frame_index)
+
+    def buffer_random_frame(self):
+        pass
+
+    # def export_ndarray(self, frame_index: int) -> np.ndarray:
+    #     self.update_frame(frame_index)
+    #     img = QImage(self.video_data.width, self.video_data.height, QImage.Format_ARGB32)
+    #     painter = QPainter()
+    #     painter.begin(img)
+    #     self.render(painter)
+    #     painter.end()
+    #     shape = (img.height(), img.bytesPerLine() * 8 // img.depth(), 4)
+    #     ptr = img.bits()
+    #     arr = np.array(ptr, dtype=np.uint8).reshape(shape)
+    #     arr = arr[..., :3]
+    #     self.export_frame_dict[frame_index] = arr
+    #     return arr

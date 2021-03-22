@@ -187,6 +187,9 @@ class TrajectoryItem(QGraphicsLineItem):
         self.frame_interval = frame_interval
         self.setPen(self.settings_helper.trajectory_pen(index))
 
+    def update_pen(self):
+        self.setPen(self.settings_helper.trajectory_pen(self.index))
+
 
 class ParticleData(object):
     """

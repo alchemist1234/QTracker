@@ -7,6 +7,8 @@ msg_warning = '警告'
 
 msg_file_unselected = '未选择文件'
 msg_select_file = '选择视频文件'
+msg_waiting = '请稍候'
+msg_exporting = '正在导出...'
 
 main_title = 'QTracker'
 main_widget_open_file = '打开文件'

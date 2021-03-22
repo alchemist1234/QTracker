@@ -1,11 +1,12 @@
-from typing import Set, NoReturn, List
+from typing import NoReturn
 
-from PySide6.QtCore import Qt, Slot, Signal, QPoint
-from PySide6.QtGui import QWheelEvent, QMouseEvent, QColor, QImage, QPixmap
+from PySide6.QtCore import Qt, QPoint
+from PySide6.QtGui import QWheelEvent
 from PySide6.QtWidgets import *
 
 
 class VideoView(QGraphicsView):
+
     def __init__(self, parent):
         super().__init__(parent)
         self.fixed_widgets = dict()

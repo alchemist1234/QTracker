@@ -1,5 +1,7 @@
 import math
 import re
+import sys
+import os
 from typing import Set, Tuple
 
 
@@ -61,3 +63,11 @@ def hsv2rgb(h: float, s: float, v: float) -> Tuple[float, float, float]:
         r, g, b = v, p, q
     r, g, b = int(r * 255), int(g * 255), int(b * 255)
     return b, g, r
+
+
+def resource_path(relative_path: str):
+    if getattr(sys, 'frozen', False):
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.abspath('.')
+    return os.path.join(base_path, *relative_path.split('/')).replace('\\', '/')

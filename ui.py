@@ -8,6 +8,7 @@ import constant
 import default_settings
 from scene import VideoScene
 from settings import Settings
+from utils import resource_path
 from view import VideoView
 
 
@@ -58,17 +59,17 @@ class ViewButtonGroup(QWidget):
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
-        icon_add = QIcon('./images/add.svg')
-        icon_select = QIcon('./images/cursor.svg')
-        icon_crop = QIcon('./images/crop.svg')
-        icon_combine = QIcon('./images/combine.svg')
-        self.bt_select = QPushButton(icon_select, '', self)
+        icon_move = QIcon(resource_path('images/cursor-default.png'))
+        icon_add = QIcon(resource_path('images/add-circle-line.png'))
+        icon_crop = QIcon(resource_path('images/crop-line.png'))
+        icon_combine = QIcon(resource_path('images/vector-combine.png'))
+        self.bt_move = QPushButton(icon_move, '', self)
         self.bt_add = QPushButton(icon_add, '', self)
         self.bt_crop = QPushButton(icon_crop, '', self)
         self.bt_combine = QPushButton(icon_combine, '', self)
 
         layout = QVBoxLayout(self)
-        layout.addWidget(self.bt_select)
+        layout.addWidget(self.bt_move)
         layout.addWidget(self.bt_add)
         layout.addWidget(self.bt_crop)
         layout.addWidget(self.bt_combine)
@@ -97,23 +98,17 @@ class MainUi(object):
 
         # Tool Bar
         self.tool_bar = main.addToolBar('tool bar')
-        icon_select = QIcon('./images/open.svg')
-        icon_setting = QIcon('./images/setting.svg')
-        icon_load = QIcon('./images/load.svg')
-        icon_analyze = QIcon('./images/analyze.svg')
-        icon_track = QIcon('./images/track.svg')
-        icon_export = QIcon('./images/export.svg')
-        self.bt_select_file = QPushButton(icon_select, '', self.widget)
+        icon_open = QIcon(resource_path('images/open-line.png'))
+        icon_setting = QIcon(resource_path('images/settings-line.png'))
+        icon_analyze = QIcon(resource_path('images/cpu-line.png'))
+        icon_export = QIcon(resource_path('images/content-save.png'))
+        self.bt_open_file = QPushButton(icon_open, '', self.widget)
         self.bt_settings = QPushButton(icon_setting, '', self.widget)
-        self.bt_load_file = QPushButton(icon_load, '', self.widget)
-        self.bt_analyze = QPushButton(icon_analyze, '', self.widget)
-        self.bt_track = QPushButton(icon_track, '', self.widget)
+        self.bt_load_file = QPushButton(icon_analyze, '', self.widget)
         self.bt_export = QPushButton(icon_export, '', self.widget)
-        self.tool_bar.addWidget(self.bt_select_file)
+        self.tool_bar.addWidget(self.bt_open_file)
         self.tool_bar.addWidget(self.bt_settings)
         self.tool_bar.addWidget(self.bt_load_file)
-        self.tool_bar.addWidget(self.bt_analyze)
-        self.tool_bar.addWidget(self.bt_track)
         self.tool_bar.addSeparator()
         self.tool_bar.addWidget(self.bt_export)
 
@@ -142,7 +137,7 @@ class MainUi(object):
         self.sl_frames.setMaximum(1)
         self.lb_frame_index = QLabel(self.widget)
         self.lcd_current_frame = QLCDNumber(self.widget)
-        icon_play = QIcon('./images/play.svg')
+        icon_play = QIcon(resource_path('images/play-circle-outline.png'))
         self.bt_play = QPushButton(icon_play, '', self.widget)
         self.le_filter = QLineEdit(self.widget)
         self.hbox_bottom.addWidget(self.lb_frames)
@@ -171,11 +166,9 @@ class MainUi(object):
 
     def translate(self):
         self.main.setWindowTitle(self.main.tr(constant.main_title))
-        self.bt_select_file.setToolTip(constant.main_widget_open_file)
+        self.bt_open_file.setToolTip(constant.main_widget_open_file)
         self.bt_settings.setToolTip(constant.main_widget_settings)
         self.bt_load_file.setToolTip(constant.main_widget_load_file)
-        self.bt_analyze.setToolTip(constant.main_widget_analyze)
-        self.bt_track.setToolTip(constant.main_widget_track)
         self.bt_export.setToolTip(constant.main_widget_export)
         self.bt_select.setToolTip(constant.main_widget_select)
         self.bt_add.setToolTip(constant.main_widget_add)
@@ -187,7 +180,7 @@ class MainUi(object):
 
     @property
     def bt_select(self):
-        return self._btg_view.bt_select
+        return self._btg_view.bt_move
 
     @property
     def bt_add(self):

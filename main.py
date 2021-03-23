@@ -34,7 +34,7 @@ class MainWindow(QMainWindow):
         self.video_exporter = VideoExporter(self.ui.scene)
 
         # connect
-        self.ui.bt_select_file.clicked.connect(self.select_file)
+        self.ui.bt_open_file.clicked.connect(self.select_file)
         self.ui.bt_settings.clicked.connect(self.show_settings)
         self.ui.bt_load_file.clicked.connect(self.load_file)
         self.ui.bt_export.clicked.connect(self.export_video)

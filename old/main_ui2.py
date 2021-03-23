@@ -44,7 +44,7 @@ class MainWindow(QMainWindow):
         self.th_video = Reader(self)
         self.ui.graphicsView = VideoView(self.th_video.fps, self.ui.widget)
         self.ui.horizontalLayout_7.addWidget(self.ui.graphicsView)
-        self.ui.bt_select.setChecked(True)
+        self.ui.bt_move.setChecked(True)
         self.init_color_label()
 
         self.ui.bt_start.clicked.connect(self.load_file)
@@ -190,7 +190,7 @@ class MainWindow(QMainWindow):
 
     def update_mode(self, button: QPushButton):
         mode = None
-        if button == self.ui.bt_select:
+        if button == self.ui.bt_move:
             mode = OperationMode.SELECT
         elif button == self.ui.bt_add:
             mode = OperationMode.ADD

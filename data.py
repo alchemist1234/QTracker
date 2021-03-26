@@ -216,6 +216,12 @@ class ParticleData(object):
     def update_particle(self, index: int, pos: Tuple[int, int]):
         self._particle_pos[index] = pos
 
+    def update_particle_by(self, index: int, moved: Tuple[int, int]):
+        if moved == (0, 0) or index not in self._particle_pos:
+            return
+        current_pos = self._particle_pos[index]
+        self._particle_pos[index] = (current_pos[0] + moved[0], current_pos[1] + moved[1])
+
     def remove_particle(self, index: int):
         if index in self._particle_pos:
             del self._particle_pos[index]

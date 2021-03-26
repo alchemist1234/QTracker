@@ -35,6 +35,7 @@ class VideoScene(QGraphicsScene):
         self.current_frame_index = 0
         self.config_changed = False
         self.addItem(self.current_frame_item)
+        self.mouse_press_pos = QPointF()
 
         # np.ndarray 用于缓存导出图像
         self.export_frame_dict = {}
@@ -180,6 +181,7 @@ class VideoScene(QGraphicsScene):
         pass
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent):
+        self.mouse_press_pos = event.scenePos()
         if self.mode == OperationMode.ADD:
             if self.current_frame_index in self._particle_data:
                 scene_pos = event.scenePos().toPoint()
@@ -188,6 +190,20 @@ class VideoScene(QGraphicsScene):
                     self.update_particle_pos(index, (scene_pos.x(), scene_pos.y()))
             else:
                 QMessageBox.information(None, '提示', f'未加载视频')
+        super(VideoScene, self).mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+        pos = event.scenePos()
+        moved = pos - self.mouse_press_pos
+        if moved.manhattanLength() > 0:
+            if len(self.selectedItems()) > 0:
+                for item in self.selectedItems():
+                    index = item.index
+                    particle_data = self._particle_data[self.current_frame_index]
+                    particle_data.update_particle_by(index, (moved.x(), moved.y()))
+                self.calc_trajectory()
+                self.updated_frame_index = {i for i in self.updated_frame_index if i < self.current_frame_index}
+        super(VideoScene, self).mouseReleaseEvent(event)
 
     def keyPressEvent(self, event: QKeyEvent):
         if event.key() == Qt.Key_Delete:
@@ -207,17 +223,4 @@ class VideoScene(QGraphicsScene):
                 # 更新展需要更新轨迹的帧
                 self.updated_frame_index = {i for i in self.updated_frame_index if i < self.current_frame_index}
                 self.calc_trajectory()
-
-    # def export_ndarray(self, frame_index: int) -> np.ndarray:
-    #     self.update_frame(frame_index)
-    #     img = QImage(self.video_data.width, self.video_data.height, QImage.Format_ARGB32)
-    #     painter = QPainter()
-    #     painter.begin(img)
-    #     self.render(painter)
-    #     painter.end()
-    #     shape = (img.height(), img.bytesPerLine() * 8 // img.depth(), 4)
-    #     ptr = img.bits()
-    #     arr = np.array(ptr, dtype=np.uint8).reshape(shape)
-    #     arr = arr[..., :3]
-    #     self.export_frame_dict[frame_index] = arr
-    #     return arr
+        super(VideoScene, self).keyPressEvent(event)

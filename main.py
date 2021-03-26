@@ -45,6 +45,10 @@ class MainWindow(QMainWindow):
         self.ui.sl_frames.valueChanged.connect(self.frame_changed)
         self.ui.le_filter.textChanged.connect(self.filter_changed)
 
+        self.ui.bt_show_particle.clicked.connect(lambda x: self.visibility_changed(self.ui.bt_show_particle))
+        self.ui.bt_show_mark.clicked.connect(lambda x: self.visibility_changed(self.ui.bt_show_mark))
+        self.ui.bt_show_trajectory.clicked.connect(lambda x: self.visibility_changed(self.ui.bt_show_trajectory))
+
     def init_file_loader(self):
         """
         初始化视频加载器
@@ -194,14 +198,24 @@ class MainWindow(QMainWindow):
         self.ui.scene.calc_trajectory()
         pass
 
-    def frame_changed(self, value):
+    def frame_changed(self, value: Optional[int] = None):
         """
         切换帧, 更新Scene
         帧滑块值变化时触发
         :param value: 帧数
         """
-        self.ui.lcd_current_frame.display(value)
+        if value is not None:
+            self.ui.lcd_current_frame.display(value)
         self.ui.scene.update_frame(value)
+
+    def visibility_changed(self, bt: QPushButton):
+        if bt == self.ui.bt_show_particle:
+            self.settings.set_value(default_settings.show_particle, bt.isChecked())
+        if bt == self.ui.bt_show_mark:
+            self.settings.set_value(default_settings.show_mark, bt.isChecked())
+        if bt == self.ui.bt_show_trajectory:
+            self.settings.set_value(default_settings.show_trajectory, bt.isChecked())
+        self.frame_changed()
 
     def file_selected(self):
         """

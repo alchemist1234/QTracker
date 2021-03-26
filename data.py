@@ -165,13 +165,16 @@ class ParticleGroup(QGraphicsItemGroup):
     def __init__(self, settings: Settings, index: int, x, y):
         super().__init__()
         self.settings = settings
+        self.setting_helper = SettingWidgetHelper(settings)
         self.index = index
         self.setX(x)
         self.setY(y)
-        self.particle = ParticleItem(settings, index, x, y)
-        self.mark = MarkItem(settings, index, x, y)
-        self.addToGroup(self.particle)
-        self.addToGroup(self.mark)
+        if self.setting_helper.visible(default_settings.show_particle, index):
+            self.particle = ParticleItem(settings, index, x, y)
+            self.addToGroup(self.particle)
+        if self.setting_helper.visible(default_settings.show_mark, index):
+            self.mark = MarkItem(settings, index, x, y)
+            self.addToGroup(self.mark)
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
         self.setFlag(QGraphicsItem.ItemIsMovable, True)
 
@@ -237,7 +240,8 @@ class ParticleData(object):
         """
         groups = {}
         for index, pos in self._particle_pos.items():
-            if self.setting_helper.visible(default_settings.show_particle, index):
+            if self.setting_helper.visible(default_settings.show_particle, index) or \
+                    self.setting_helper.visible(default_settings.show_mark, index):
                 particle_group = ParticleGroup(self.settings, index, pos[0], pos[1])
                 groups[index] = particle_group
         return groups

@@ -54,8 +54,9 @@ class ColorLabel(QLabel):
 
 
 class ViewButtonGroup(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, settings: Settings, parent=None):
         super().__init__(parent)
+        self.settings = settings
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
@@ -63,6 +64,9 @@ class ViewButtonGroup(QWidget):
         icon_add = QIcon(resource_path('images/add-circle-line.png'))
         icon_crop = QIcon(resource_path('images/crop-line.png'))
         icon_combine = QIcon(resource_path('images/vector-combine.png'))
+        icon_show_particle = QIcon(resource_path('images/chart-bubble.png'))
+        icon_show_mark = QIcon(resource_path('images/numeric.png'))
+        icon_show_trajectory = QIcon(resource_path('images/ray-start-end.png'))
         self.bt_move = QPushButton(icon_move, '', self)
         self.bt_move.setCheckable(True)
         self.bt_move.setAutoExclusive(True)
@@ -75,11 +79,25 @@ class ViewButtonGroup(QWidget):
         self.bt_crop.setAutoExclusive(True)
         self.bt_combine = QPushButton(icon_combine, '', self)
 
+        self.bt_show_particle = QPushButton(icon_show_particle, '', self)
+        self.bt_show_particle.setCheckable(True)
+        self.bt_show_particle.setChecked(settings.boolean_value(default_settings.show_particle))
+        self.bt_show_mark = QPushButton(icon_show_mark, '', self)
+        self.bt_show_mark.setCheckable(True)
+        self.bt_show_mark.setChecked(settings.boolean_value(default_settings.show_mark))
+        self.bt_show_trajectory = QPushButton(icon_show_trajectory, '', self)
+        self.bt_show_trajectory.setCheckable(True)
+        self.bt_show_trajectory.setChecked(settings.boolean_value(default_settings.show_trajectory))
+
         layout = QVBoxLayout(self)
         layout.addWidget(self.bt_move)
         layout.addWidget(self.bt_add)
         layout.addWidget(self.bt_crop)
         layout.addWidget(self.bt_combine)
+        layout.addItem(QSpacerItem(20, 100, QSizePolicy.Minimum, QSizePolicy.Expanding))
+        layout.addWidget(self.bt_show_particle)
+        layout.addWidget(self.bt_show_mark)
+        layout.addWidget(self.bt_show_trajectory)
 
 
 class MainUi(object):
@@ -131,7 +149,7 @@ class MainUi(object):
         self.view = VideoView(main)
         self.scene = VideoScene(self.view, settings)
         self.view.setScene(self.scene)
-        self._btg_view = ViewButtonGroup(self.widget)
+        self._btg_view = ViewButtonGroup(settings, self.widget)
         self.hbox_middle.addWidget(self.view)
         self.view.add_fixed_widget(self._btg_view, Qt.AlignRight | Qt.AlignTop)
         self.vbox_widget.addLayout(self.hbox_middle)
@@ -175,17 +193,20 @@ class MainUi(object):
 
     def translate(self):
         self.main.setWindowTitle(self.main.tr(constant.main_title))
-        self.bt_open_file.setToolTip(constant.main_widget_open_file)
-        self.bt_settings.setToolTip(constant.main_widget_settings)
-        self.bt_load_file.setToolTip(constant.main_widget_load_file)
-        self.bt_export.setToolTip(constant.main_widget_export)
-        self.bt_move.setToolTip(constant.main_widget_select)
-        self.bt_add.setToolTip(constant.main_widget_add)
-        self.bt_crop.setToolTip(constant.main_widget_crop)
-        self.bt_combine.setToolTip(constant.main_widget_combine)
-        self.lb_frames.setText(constant.main_widget_frames)
-        self.bt_play.setToolTip(constant.main_widget_play)
-        self.le_filter.setToolTip(constant.main_widget_filter)
+        self.bt_open_file.setToolTip(self.main.tr(constant.main_widget_open_file))
+        self.bt_settings.setToolTip(self.main.tr(constant.main_widget_settings))
+        self.bt_load_file.setToolTip(self.main.tr(constant.main_widget_load_file))
+        self.bt_export.setToolTip(self.main.tr(constant.main_widget_export))
+        self.bt_move.setToolTip(self.main.tr(constant.main_widget_select))
+        self.bt_add.setToolTip(self.main.tr(constant.main_widget_add))
+        self.bt_crop.setToolTip(self.main.tr(constant.main_widget_crop))
+        self.bt_combine.setToolTip(self.main.tr(constant.main_widget_combine))
+        self.lb_frames.setText(self.main.tr(constant.main_widget_frames))
+        self.bt_play.setToolTip(self.main.tr(constant.main_widget_play))
+        self.le_filter.setToolTip(self.main.tr(constant.main_widget_filter))
+        self.bt_show_mark.setToolTip(self.main.tr(constant.main_widget_show_mark))
+        self.bt_show_particle.setToolTip(self.main.tr(constant.main_widget_show_particle))
+        self.bt_show_trajectory.setToolTip(self.main.tr(constant.main_widget_show_trajectory))
 
     @property
     def bt_move(self):
@@ -202,6 +223,18 @@ class MainUi(object):
     @property
     def bt_combine(self):
         return self._btg_view.bt_combine
+
+    @property
+    def bt_show_particle(self):
+        return self._btg_view.bt_show_particle
+
+    @property
+    def bt_show_mark(self):
+        return self._btg_view.bt_show_mark
+
+    @property
+    def bt_show_trajectory(self):
+        return self._btg_view.bt_show_trajectory
 
 
 class SettingUi(object):

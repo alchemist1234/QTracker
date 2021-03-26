@@ -193,7 +193,7 @@ class TrajectoryItem(QGraphicsLineItem):
 
 class ParticleData(object):
     """
-    粒子数据
+    一帧内的粒子数据
     """
 
     def __init__(self, settings: Settings, particle_pos: Dict[int, Tuple[int, int]]):
@@ -212,6 +212,17 @@ class ParticleData(object):
 
     def update_line(self, index, x1, y1, x2, y2, frame_interval):
         self._trajectory_lines[index] = (x1, y1, x2, y2, frame_interval)
+
+    def update_particle(self, index: int, pos: Tuple[int, int]):
+        self._particle_pos[index] = pos
+
+    def remove_particle(self, index: int):
+        if index in self._particle_pos:
+            del self._particle_pos[index]
+
+    def remove_trajectory(self, index: int):
+        if index in self._trajectory_lines:
+            del self._trajectory_lines[index]
 
     def particle_group_items(self) -> Dict[int, ParticleGroup]:
         """

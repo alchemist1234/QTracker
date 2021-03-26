@@ -10,6 +10,8 @@ class VideoView(QGraphicsView):
     def __init__(self, parent):
         super().__init__(parent)
         self.fixed_widgets = dict()
+        self.horizontalScrollBar().valueChanged.connect(self.scrollEvent)
+        self.verticalScrollBar().valueChanged.connect(self.scrollEvent)
 
     def add_fixed_widget(self, widget: QWidget, alignment: Qt.AlignmentFlag):
         """
@@ -19,6 +21,9 @@ class VideoView(QGraphicsView):
         """
         widget.setParent(self.viewport())
         self.fixed_widgets[widget] = alignment
+
+    def scrollEvent(self):
+        self._update_fixed_widgets()
 
     def showEvent(self, event):
         self._update_fixed_widgets()

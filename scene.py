@@ -1,14 +1,15 @@
 from typing import Dict, Tuple, Optional
 import time
 
-from PySide6.QtCore import QByteArray
-from PySide6.QtGui import QImage, QPixmap, QPainter
+from PySide6.QtCore import QByteArray, QPoint, QPointF, Qt
+from PySide6.QtGui import QImage, QPixmap, QPainter, QKeyEvent
 from PySide6.QtWidgets import *
 import numpy as np
 
 from data import ParticleData, SettingWidgetHelper
 from settings import Settings
 import default_settings
+from enums import OperationMode
 
 
 class VideoScene(QGraphicsScene):
@@ -17,6 +18,7 @@ class VideoScene(QGraphicsScene):
         super(VideoScene, self).__init__(parent)
         self.settings = settings
         self.setting_helper = SettingWidgetHelper(settings)
+        self.mode = OperationMode.MOVE
         # 视频帧base64字典 {帧数: base64}
         self._frame_base64_dict = {}
         # 粒子数据字典 {帧数: ParticleData}
@@ -63,13 +65,24 @@ class VideoScene(QGraphicsScene):
         """
         self._frame_base64_dict[frame_index] = img
 
-    def add_particle_pos(self, frame_index: int, particle_pos: Dict[int, Tuple[int, int]]):
+    def set_particle_pos(self, frame_index: int, particle_pos: Dict[int, Tuple[int, int]]):
         """
         添加粒子数据
         :param frame_index: 帧索引
         :param particle_pos: 粒子坐标
         """
         self._particle_data[frame_index] = ParticleData(self.settings, particle_pos)
+
+    def update_particle_pos(self, index: int, pos: Tuple[int, int]):
+        if index in self.particle_group_items.keys():
+            ret = QMessageBox.information(None, '提示', f'当前帧已存在粒子{index}, 继续添加会覆盖原粒子, 是否继续?',
+                                          QMessageBox.Cancel, QMessageBox.Ok)
+            if ret == QMessageBox.Cancel:
+                return
+        self._particle_data[self.current_frame_index].update_particle(index, pos)
+        self.update_particle(self.current_frame_index)
+        self.calc_trajectory()
+        self.updated_frame_index = {i for i in self.updated_frame_index if i < self.current_frame_index}
 
     def calc_trajectory(self):
         last_pos_dict = {}
@@ -165,6 +178,35 @@ class VideoScene(QGraphicsScene):
 
     def buffer_random_frame(self):
         pass
+
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent):
+        if self.mode == OperationMode.ADD:
+            if self.current_frame_index in self._particle_data:
+                scene_pos = event.scenePos().toPoint()
+                index, ok = QInputDialog.getInt(None, '输入', '粒子编号', 1)
+                if ok:
+                    self.update_particle_pos(index, (scene_pos.x(), scene_pos.y()))
+            else:
+                QMessageBox.information(None, '提示', f'未加载视频')
+
+    def keyPressEvent(self, event: QKeyEvent):
+        if event.key() == Qt.Key_Delete:
+            if len(self.selectedItems()) > 0:
+                for item in self.selectedItems():
+                    index = item.index
+                    particle_data = self._particle_data[self.current_frame_index]
+                    particle_data.remove_particle(index)
+                    particle_data.remove_trajectory(index)
+                    if self.current_frame_index + 1 in self._particle_data:
+                        next_particle_data = self._particle_data[self.current_frame_index + 1]
+                        next_particle_data.remove_trajectory(index)
+                    del self.particle_group_items[index]
+                    self.removeItem(item)
+                    if index in self.trajectory_items[self.current_frame_index]:
+                        self.removeItem(self.trajectory_items[self.current_frame_index][index])
+                # 更新展需要更新轨迹的帧
+                self.updated_frame_index = {i for i in self.updated_frame_index if i < self.current_frame_index}
+                self.calc_trajectory()
 
     # def export_ndarray(self, frame_index: int) -> np.ndarray:
     #     self.update_frame(frame_index)

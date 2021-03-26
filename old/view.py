@@ -177,7 +177,7 @@ class VideoView(QGraphicsView):
             scene_pos = self.mapToScene(view_pos)
             index, ok = QInputDialog.getInt(self, '输入', '待添加粒子编号', QLineEdit.Normal)
             if ok:
-                self.current_scene.add_particle(index, scene_pos.x(), scene_pos.y())
+                self.current_scene.update_particle(index, scene_pos.x(), scene_pos.y())
             # scene = self.scene()
             # view_pos = event.pos()
             # scene_pos = self.mapToScene(view_pos)

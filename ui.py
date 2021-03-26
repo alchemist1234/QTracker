@@ -64,8 +64,15 @@ class ViewButtonGroup(QWidget):
         icon_crop = QIcon(resource_path('images/crop-line.png'))
         icon_combine = QIcon(resource_path('images/vector-combine.png'))
         self.bt_move = QPushButton(icon_move, '', self)
+        self.bt_move.setCheckable(True)
+        self.bt_move.setAutoExclusive(True)
+        self.bt_move.setChecked(True)
         self.bt_add = QPushButton(icon_add, '', self)
+        self.bt_add.setCheckable(True)
+        self.bt_add.setAutoExclusive(True)
         self.bt_crop = QPushButton(icon_crop, '', self)
+        self.bt_crop.setCheckable(True)
+        self.bt_crop.setAutoExclusive(True)
         self.bt_combine = QPushButton(icon_combine, '', self)
 
         layout = QVBoxLayout(self)
@@ -135,6 +142,8 @@ class MainUi(object):
         self.sl_frames = QSlider(Qt.Horizontal, self.widget)
         self.sl_frames.setMinimum(1)
         self.sl_frames.setMaximum(1)
+        self.sl_frames.setSingleStep(1)
+        self.sl_frames.setPageStep(1)
         self.lb_frame_index = QLabel(self.widget)
         self.lcd_current_frame = QLCDNumber(self.widget)
         icon_play = QIcon(resource_path('images/play-circle-outline.png'))
@@ -170,7 +179,7 @@ class MainUi(object):
         self.bt_settings.setToolTip(constant.main_widget_settings)
         self.bt_load_file.setToolTip(constant.main_widget_load_file)
         self.bt_export.setToolTip(constant.main_widget_export)
-        self.bt_select.setToolTip(constant.main_widget_select)
+        self.bt_move.setToolTip(constant.main_widget_select)
         self.bt_add.setToolTip(constant.main_widget_add)
         self.bt_crop.setToolTip(constant.main_widget_crop)
         self.bt_combine.setToolTip(constant.main_widget_combine)
@@ -179,7 +188,7 @@ class MainUi(object):
         self.le_filter.setToolTip(constant.main_widget_filter)
 
     @property
-    def bt_select(self):
+    def bt_move(self):
         return self._btg_view.bt_move
 
     @property

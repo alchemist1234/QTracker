@@ -12,6 +12,7 @@ from settings import Settings
 from ui import MainUi, SettingUi, ColorEditorUi, ColorWidgetUi, ColorLabel
 from utils import split_indexes_text
 from worker import VideoLoader, VideoExporter
+from enums import OperationMode
 
 
 class MainWindow(QMainWindow):
@@ -38,6 +39,9 @@ class MainWindow(QMainWindow):
         self.ui.bt_settings.clicked.connect(self.show_settings)
         self.ui.bt_load_file.clicked.connect(self.load_file)
         self.ui.bt_export.clicked.connect(self.export_video)
+        self.ui.bt_add.clicked.connect(lambda bt: self.update_mode(OperationMode.ADD))
+        self.ui.bt_move.clicked.connect(lambda bt: self.update_mode(OperationMode.MOVE))
+        self.ui.bt_crop.clicked.connect(lambda bt: self.update_mode(OperationMode.CROP))
         self.ui.sl_frames.valueChanged.connect(self.frame_changed)
         self.ui.le_filter.textChanged.connect(self.filter_changed)
 
@@ -139,6 +143,9 @@ class MainWindow(QMainWindow):
             self.video_exporter.release_writer()
             self.waiting_dialog.close()
 
+    def update_mode(self, mode: OperationMode):
+        self.ui.scene.mode = mode
+
     @Slot(int)
     def load_start(self, frame_count: int):
         """
@@ -175,7 +182,7 @@ class MainWindow(QMainWindow):
         :param frame_particles:  粒子数据{粒子索引: (x, y)}
         """
         self.ui.scene.add_frame_image(frame_index, frame_base64)
-        self.ui.scene.add_particle_pos(frame_index, frame_particles)
+        self.ui.scene.set_particle_pos(frame_index, frame_particles)
         if frame_index == 1:
             self.ui.scene.update_frame(frame_index)
 
@@ -193,6 +200,7 @@ class MainWindow(QMainWindow):
         帧滑块值变化时触发
         :param value: 帧数
         """
+        self.ui.lcd_current_frame.display(value)
         self.ui.scene.update_frame(value)
 
     def file_selected(self):

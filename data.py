@@ -233,6 +233,21 @@ class ParticleData(object):
         if index in self._trajectory_lines:
             del self._trajectory_lines[index]
 
+    def combine_particle(self, indexes: set):
+        min_index = min(indexes)
+        index_list = list(indexes)
+        index_list.sort()
+        for i in range(len(index_list) - 1):
+            index = index_list.pop()
+            if index in self._particle_pos:
+                for deleted_index in index_list:
+                    self.remove_particle(deleted_index)
+                    self.remove_trajectory(deleted_index)
+                self._particle_pos[min_index] = self._particle_pos[index]
+                self.remove_particle(index)
+                self.remove_trajectory(index)
+                break
+
     def particle_group_items(self) -> Dict[int, ParticleGroup]:
         """
         获取粒子+标签字典

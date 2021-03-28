@@ -42,6 +42,7 @@ class MainWindow(QMainWindow):
         self.ui.bt_add.clicked.connect(lambda bt: self.update_mode(OperationMode.ADD))
         self.ui.bt_move.clicked.connect(lambda bt: self.update_mode(OperationMode.MOVE))
         self.ui.bt_crop.clicked.connect(lambda bt: self.update_mode(OperationMode.CROP))
+        self.ui.bt_combine.clicked.connect(self.combine_particles)
         self.ui.sl_frames.valueChanged.connect(self.frame_changed)
         self.ui.le_filter.textChanged.connect(self.filter_changed)
 
@@ -157,7 +158,7 @@ class MainWindow(QMainWindow):
         :param frame_count: 总帧数
         """
         self.ui.sl_frames.setMaximum(frame_count)
-        self.ui.lb_frame_index.setText(str(frame_count))
+        self.ui.lcd_current_frame.display(f'0-{frame_count}')
 
     @Slot(int, int, str)
     def progressing(self, total: int, current: int, info: str):
@@ -188,6 +189,7 @@ class MainWindow(QMainWindow):
         self.ui.scene.add_frame_image(frame_index, frame_base64)
         self.ui.scene.set_particle_pos(frame_index, frame_particles)
         if frame_index == 1:
+            self.ui.lcd_current_frame.display(f'1-{self.video_data.frame_count}')
             self.ui.scene.update_frame(frame_index)
 
     @Slot(int, dict)
@@ -205,7 +207,7 @@ class MainWindow(QMainWindow):
         :param value: 帧数
         """
         if value is not None:
-            self.ui.lcd_current_frame.display(value)
+            self.ui.lcd_current_frame.display(f'{value}-{self.video_data.frame_count}')
         self.ui.scene.update_frame(value)
 
     def visibility_changed(self, bt: QPushButton):
@@ -223,6 +225,17 @@ class MainWindow(QMainWindow):
         """
         return self.file_path is not None and len(self.file_path) > 0
 
+    def combine_particles(self):
+        items = self.ui.scene.selectedItems()
+        if len(items) == 0:
+            text, ok = QInputDialog.getText(self, "输入", "待合并的粒子编号(,或者空格分隔)", QLineEdit.Normal)
+            if ok:
+                indexes = split_indexes_text(text)
+                self.ui.scene.combine_particles(indexes)
+        else:
+            indexes = {i.index for i in items}
+            self.ui.scene.combine_particles(indexes)
+
     def resizeEvent(self, event: QResizeEvent):
         """
         窗口大小改变事件
@@ -230,7 +243,6 @@ class MainWindow(QMainWindow):
         self.settings.set_value(default_settings.main_width, event.size().width())
         self.settings.set_value(default_settings.main_height, event.size().height())
         self.update_file_path()
-        pass
 
 
 class SettingDialog(QDialog):

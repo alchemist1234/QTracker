@@ -177,6 +177,13 @@ class VideoScene(QGraphicsScene):
             self.update_particle(frame_index)
             self.update_trajectory(frame_index)
 
+    def combine_particles(self, indexes: set):
+        if len(indexes) > 1:
+            for data in self._particle_data.values():
+                data.combine_particle(indexes)
+            self.updated_frame_index.clear()
+            self.calc_trajectory()
+
     def buffer_random_frame(self):
         pass
 

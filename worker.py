@@ -5,7 +5,7 @@ from typing import List, Dict, Set
 from enum import Enum
 import time
 
-from PySide6.QtCore import QThread, Signal, QObject, QByteArray, QBuffer, QIODevice, Slot, QTimer
+from PySide6.QtCore import QThread, Signal, QObject, QByteArray, QBuffer, QIODevice, Slot, QTimer, QRectF
 from PySide6.QtGui import QImage, QPainter
 from PySide6.QtWidgets import QMessageBox
 import cv2

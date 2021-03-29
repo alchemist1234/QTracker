@@ -8,3 +8,4 @@ build/
 *.spec
 lib/
 build.bat
+readme/changelog.md

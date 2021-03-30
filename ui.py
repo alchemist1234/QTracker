@@ -60,8 +60,10 @@ class ViewButtonGroup(QWidget):
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
+        icon_select = QIcon()
+        icon_select.addFile(resource_path('images/cursor-default.png'))
         icon_move = QIcon()
-        icon_move.addFile(resource_path('images/cursor-default.png'))
+        icon_move.addFile(resource_path('images/drag-move-fill.png'))
         icon_add = QIcon()
         icon_add.addFile(resource_path('images/add-circle-line.png'))
         icon_crop = QIcon()
@@ -74,10 +76,13 @@ class ViewButtonGroup(QWidget):
         icon_show_mark.addFile(resource_path('images/numeric.png'))
         icon_show_trajectory = QIcon()
         icon_show_trajectory.addFile(resource_path('images/ray-start-end.png'))
+        self.bt_select = QPushButton(icon_select, '', self)
+        self.bt_select.setCheckable(True)
+        self.bt_select.setAutoExclusive(True)
+        self.bt_select.setChecked(True)
         self.bt_move = QPushButton(icon_move, '', self)
         self.bt_move.setCheckable(True)
         self.bt_move.setAutoExclusive(True)
-        self.bt_move.setChecked(True)
         self.bt_add = QPushButton(icon_add, '', self)
         self.bt_add.setCheckable(True)
         self.bt_add.setAutoExclusive(True)
@@ -97,6 +102,7 @@ class ViewButtonGroup(QWidget):
         self.bt_show_trajectory.setChecked(settings.boolean_value(default_settings.show_trajectory))
 
         layout = QVBoxLayout(self)
+        layout.addWidget(self.bt_select)
         layout.addWidget(self.bt_move)
         layout.addWidget(self.bt_add)
         layout.addWidget(self.bt_crop)
@@ -212,7 +218,8 @@ class MainUi(object):
         self.bt_settings.setToolTip(self.main.tr(constant.main_widget_settings))
         self.bt_load_file.setToolTip(self.main.tr(constant.main_widget_load_file))
         self.bt_export.setToolTip(self.main.tr(constant.main_widget_export))
-        self.bt_move.setToolTip(self.main.tr(constant.main_widget_select))
+        self.bt_select.setToolTip(self.main.tr(constant.main_widget_select))
+        self.bt_move.setToolTip(self.main.tr(constant.main_widget_move))
         self.bt_add.setToolTip(self.main.tr(constant.main_widget_add))
         self.bt_crop.setToolTip(self.main.tr(constant.main_widget_crop))
         self.bt_combine.setToolTip(self.main.tr(constant.main_widget_combine))
@@ -222,6 +229,10 @@ class MainUi(object):
         self.bt_show_mark.setToolTip(self.main.tr(constant.main_widget_show_mark))
         self.bt_show_particle.setToolTip(self.main.tr(constant.main_widget_show_particle))
         self.bt_show_trajectory.setToolTip(self.main.tr(constant.main_widget_show_trajectory))
+
+    @property
+    def bt_select(self):
+        return self._btg_view.bt_select
 
     @property
     def bt_move(self):

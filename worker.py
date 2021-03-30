@@ -5,7 +5,7 @@ from typing import List, Dict, Set
 from enum import Enum
 import time
 
-from PySide6.QtCore import QThread, Signal, QObject, QByteArray, QBuffer, QIODevice, Slot, QTimer, QRectF
+from PySide6.QtCore import QThread, Signal, QObject, QByteArray, QBuffer, QIODevice, Slot, QTimer, QRectF, QRect
 from PySide6.QtGui import QImage, QPainter
 from PySide6.QtWidgets import QMessageBox
 import cv2
@@ -293,20 +293,26 @@ class VideoExporter(QObject):
     def video_data(self, video_data: VideoData):
         self._video_data = video_data
 
-    def open_writer(self):
+    def open_writer(self, source_rect: QRectF = None):
+        rect = QRect(0, 0, self.video_data.width,
+                     self.video_data.height) if source_rect is None else source_rect.toRect()
         fourcc = VideoExporter.codes_map[self._file_ext]
+        print(fourcc)
         self.writer.open(self._file_path, cv2.VideoWriter.fourcc(*fourcc), self.video_data.fps,
-                         (self.video_data.width, self.video_data.height), True)
+                         (rect.width(), rect.height()), True)
 
     def release_writer(self):
         self.writer.release()
 
-    def export_arr(self, frame_index: int):
+    def export_arr(self, frame_index: int, source_rect: QRectF = None):
         self.scene.update_frame(frame_index)
-        img = QImage(self.video_data.width, self.video_data.height, QImage.Format_ARGB32)
+        rect = QRect(0, 0, self.video_data.width,
+                     self.video_data.height) if source_rect is None else source_rect.toRect()
+        img = QImage(rect.width(), rect.height(), QImage.Format_ARGB32_Premultiplied)
         painter = QPainter()
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
         painter.begin(img)
-        self.scene.render(painter)
+        self.scene.render(painter, source=rect)
         painter.end()
         shape = (img.height(), img.bytesPerLine() * 8 // img.depth(), 4)
         ptr = img.bits()

@@ -39,8 +39,9 @@ class MainWindow(QMainWindow):
         self.ui.bt_settings.clicked.connect(self.show_settings)
         self.ui.bt_load_file.clicked.connect(self.load_file)
         self.ui.bt_export.clicked.connect(self.export_video)
-        self.ui.bt_add.clicked.connect(lambda bt: self.update_mode(OperationMode.ADD))
+        self.ui.bt_select.clicked.connect(lambda bt: self.update_mode(OperationMode.SELECT))
         self.ui.bt_move.clicked.connect(lambda bt: self.update_mode(OperationMode.MOVE))
+        self.ui.bt_add.clicked.connect(lambda bt: self.update_mode(OperationMode.ADD))
         self.ui.bt_crop.clicked.connect(lambda bt: self.update_mode(OperationMode.CROP))
         self.ui.bt_combine.clicked.connect(self.combine_particles)
         self.ui.sl_frames.valueChanged.connect(self.frame_changed)
@@ -74,9 +75,9 @@ class MainWindow(QMainWindow):
         选择文件
         点击选择文件触发
         """
+        options = 'avi file (*.avi);;mp4 file (*.mp4);;flv file (*.flv);;ogv file (*.ogv)'
         file_path = self.settings.value(default_settings.dir_path)
-        file_path, _ = QFileDialog.getOpenFileName(self, self.tr(constant.msg_select_file), file_path,
-                                                   'AVI Files (*.avi)')
+        file_path, _ = QFileDialog.getOpenFileName(self, self.tr(constant.msg_select_file), file_path, options)
         path, _ = os.path.split(file_path)
         self.file_path = file_path
         self.settings.set_value(default_settings.file_path, file_path)
@@ -126,7 +127,8 @@ class MainWindow(QMainWindow):
 
     def export_video(self):
         file_dir = ''
-        file_name, file_type = QFileDialog.getSaveFileName(self, 'Save Video', file_dir, 'AVI Files (*.avi)')
+        options = 'avi file (*.avi);;mp4 file (*.mp4);;flv file (*.flv);;ogv file (*.ogv)'
+        file_name, file_type = QFileDialog.getSaveFileName(self, 'Save Video', file_dir, options)
         file_path = os.path.join(file_dir, file_name)
         if len(file_path) > 0:
             frame_indexes = self.ui.scene.sorted_frame_indexes()
@@ -140,9 +142,12 @@ class MainWindow(QMainWindow):
             self.waiting_dialog.show()
             self.video_exporter.file_path = file_path
             self.video_exporter.video_data = self.video_data
-            self.video_exporter.open_writer()
+            crop_rect = self.ui.scene.crop_rect
+            self.video_exporter.open_writer(crop_rect)
             for frame_index in frame_indexes:
-                arr = self.video_exporter.export_arr(frame_index)
+                if self.waiting_dialog.wasCanceled():
+                    break
+                arr = self.video_exporter.export_arr(frame_index, crop_rect)
                 self.video_exporter.write_data(arr)
                 self.waiting_dialog.setValue(frame_index)
             self.video_exporter.release_writer()

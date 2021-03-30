@@ -176,7 +176,6 @@ class ParticleGroup(QGraphicsItemGroup):
             self.mark = MarkItem(settings, index, x, y)
             self.addToGroup(self.mark)
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
-        self.setFlag(QGraphicsItem.ItemIsMovable, True)
 
 
 class TrajectoryItem(QGraphicsLineItem):

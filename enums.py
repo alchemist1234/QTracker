@@ -5,6 +5,7 @@ class OperationMode(Enum):
     """
     VideoView 的操作类型
     """
-    MOVE = 0
-    CROP = 1
-    ADD = 2
+    SELECT = 0
+    MOVE = 1
+    CROP = 2
+    ADD = 3

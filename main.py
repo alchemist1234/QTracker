@@ -1,18 +1,18 @@
 import os
 from typing import List, Optional, Dict, Tuple
 
-from PySide6.QtCore import Qt, Slot, QModelIndex, QSize, Signal
-from PySide6.QtGui import QFontMetrics, QResizeEvent, QColor, QMouseEvent
+from PySide6.QtCore import Qt, Slot, Signal
+from PySide6.QtGui import QFontMetrics, QResizeEvent, QColor
 from PySide6.QtWidgets import *
 
 import constant
 import default_settings
 from data import VideoData
+from enums import OperationMode
 from settings import Settings
-from ui import MainUi, SettingUi, ColorEditorUi, ColorWidgetUi, ColorLabel
+from ui import MainUi, SettingUi, ColorEditorUi, ColorLabel
 from utils import split_indexes_text
 from worker import VideoLoader, VideoExporter
-from enums import OperationMode
 
 
 class MainWindow(QMainWindow):
@@ -97,6 +97,10 @@ class MainWindow(QMainWindow):
         ret = dialog.exec_()
         if ret:
             self.ui.scene.update_frame()
+            if dialog.frame_trajectory_updated:
+                self.ui.scene.trajectory_updated_frame_index.clear()
+            if dialog.frame_particle_updated:
+                self.ui.scene.particle_updated_frame_index.clear()
 
     def update_file_path(self):
         """
@@ -261,12 +265,18 @@ class SettingDialog(QDialog):
         super(SettingDialog, self).__init__()
         self.settings = settings
         self.ui = SettingUi(self, settings)
+        self.frame_trajectory_updated = False
+        self.frame_particle_updated = False
 
         self.ui.lb_particle_color_display.clicked.connect(lambda x: self.edit_color(self.ui.lb_particle_color_display))
         self.ui.lb_mark_color_display.clicked.connect(lambda x: self.edit_color(self.ui.lb_mark_color_display))
         self.ui.lb_trajectory_color_display.clicked.connect(
             lambda x: self.edit_color(self.ui.lb_trajectory_color_display))
         self.ui.lb_speed_color_display.clicked.connect(lambda x: self.edit_color(self.ui.lb_speed_color_display))
+        self.ui.cb_same_mark_color_with_particle.clicked.connect(self.ui.enable_same_mark_color_with_particle)
+        self.ui.cb_same_trajectory_color_with_particle.clicked.connect(
+            self.ui.enable_same_trajectory_color_with_particle)
+        self.ui.cb_speed_color.clicked.connect(self.ui.enable_speed_color)
 
     def edit_color(self, label: ColorLabel):
         editor = ColorEditor(self, label)
@@ -301,20 +311,29 @@ class SettingDialog(QDialog):
         self.settings.set_value(default_settings.from_frames, self.ui.le_from_frames.text())
         self.settings.set_value(default_settings.to_frames, self.ui.le_to_frames.text())
         # display
-        self.settings.set_value(default_settings.particle_color, self.ui.lb_particle_color_display.colors)
-        self.settings.set_value(default_settings.particle_size, self.ui.sb_particle_size.value())
-        self.settings.set_value(default_settings.mark_color, self.ui.lb_mark_color_display.colors)
-        self.settings.set_value(default_settings.mark_size, self.ui.sb_mark_size.value())
-        self.settings.set_value(default_settings.same_mark_color_with_particle,
-                                self.ui.cb_same_mark_color_with_particle.isChecked())
-        self.settings.set_value(default_settings.trajectory_color, self.ui.lb_trajectory_color_display.colors)
-        self.settings.set_value(default_settings.trajectory_size, self.ui.sb_trajectory_size.value())
-        self.settings.set_value(default_settings.same_trajectory_color_with_particle,
-                                self.ui.cb_same_trajectory_color_with_particle.isChecked())
-        self.settings.set_value(default_settings.enable_trajectory_speed_color, self.ui.cb_speed_color.isChecked())
-        self.settings.set_value(default_settings.trajectory_speed_color, self.ui.lb_speed_color_display.colors)
-        self.settings.set_value(default_settings.min_speed, self.ui.le_min_speed.text())
-        self.settings.set_value(default_settings.max_speed, self.ui.le_max_speed.text())
+        self.frame_particle_updated |= self.settings.set_value(default_settings.particle_color,
+                                                               self.ui.lb_particle_color_display.colors)
+        self.frame_particle_updated |= self.settings.set_value(default_settings.particle_size,
+                                                               self.ui.sb_particle_size.value())
+        self.frame_particle_updated |= self.settings.set_value(default_settings.mark_color,
+                                                               self.ui.lb_mark_color_display.colors)
+        self.frame_particle_updated |= self.settings.set_value(default_settings.mark_size, self.ui.sb_mark_size.value())
+        self.frame_particle_updated |= self.settings.set_value(default_settings.same_mark_color_with_particle,
+                                                               self.ui.cb_same_mark_color_with_particle.isChecked())
+        self.frame_trajectory_updated |= self.settings.set_value(default_settings.trajectory_color,
+                                                                 self.ui.lb_trajectory_color_display.colors)
+        self.frame_trajectory_updated |= self.settings.set_value(default_settings.trajectory_size,
+                                                                 self.ui.sb_trajectory_size.value())
+        self.frame_trajectory_updated |= self.settings.set_value(default_settings.same_trajectory_color_with_particle,
+                                                                 self.ui.cb_same_trajectory_color_with_particle.isChecked())
+        self.frame_trajectory_updated |= self.settings.set_value(default_settings.enable_trajectory_speed_color,
+                                                                 self.ui.cb_speed_color.isChecked())
+        self.frame_trajectory_updated |= self.settings.set_value(default_settings.trajectory_speed_color,
+                                                                 self.ui.lb_speed_color_display.colors)
+        self.frame_trajectory_updated |= self.settings.set_value(default_settings.min_speed,
+                                                                 self.ui.le_min_speed.text())
+        self.frame_trajectory_updated |= self.settings.set_value(default_settings.max_speed,
+                                                                 self.ui.le_max_speed.text())
         # export
         self.settings.set_value(default_settings.export_scale, self.ui.dsb_export_scale.value())
         self.settings.set_value(default_settings.export_speed, self.ui.dsb_export_speed.value())

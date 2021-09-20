@@ -6,6 +6,10 @@ from default_settings import *
 
 
 class Settings(object):
+    """
+    配置信息类
+    """
+
     def __init__(self, setting_path: str):
         self.setting_path = setting_path
         self.settings = QSettings(setting_path, QSettings.IniFormat)
@@ -32,5 +36,9 @@ class Settings(object):
     def value(self, item: setting_item):
         return self.settings.value(f'{item.section}/{item.key}', item.default_value)
 
-    def set_value(self, item: setting_item, value: Any):
+    def set_value(self, item: setting_item, value: Any) -> bool:
+        key = f'{item.section}/{item.key}'
+        old_value = self.settings.value(key)
         self.settings.setValue(f'{item.section}/{item.key}', value)
+        # 如果新旧值不同，返回True，表示有更新
+        return old_value != value

@@ -161,7 +161,9 @@ class SettingWidgetHelper(object):
 
     def trajectory_pen(self, index: int):
         if self.settings.boolean_value(default_settings.same_trajectory_color_with_particle):
-            return self.particle_pen(index)
+            pen = self.particle_pen(index)
+            pen.setWidth(self.settings.int_value(default_settings.trajectory_size))
+            return pen
         else:
             pen = QPen()
             colors = self.settings.list_value(default_settings.trajectory_color)

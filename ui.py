@@ -131,7 +131,8 @@ class ColorWidget(QWidget):
 
 
 class ColorListWidget(QListWidget):
-    default_color = Qt.red
+    # 默认颜色红色
+    default_color = QColor(255, 0, 0)
 
     def __init__(self, *args):
         super(ColorListWidget, self).__init__(*args)
@@ -658,18 +659,27 @@ class SettingUi(object):
         self.sb_particle_radius_for_split.setValue(self.settings.int_value(default_settings.split_radius))
         self.le_from_frames.setText(self.settings.str_value(default_settings.from_frames))
         self.le_to_frames.setText(self.settings.str_value(default_settings.to_frames))
+        # Display
         self.update_color_label(self.lb_particle_color_display, default_settings.particle_color)
         self.sb_particle_size.setValue(self.settings.int_value(default_settings.particle_size))
         self.update_color_label(self.lb_mark_color_display, default_settings.mark_color)
         self.sb_mark_size.setValue(self.settings.int_value(default_settings.mark_size))
-        self.cb_same_mark_color_with_particle.setChecked(
-            self.settings.boolean_value(default_settings.same_mark_color_with_particle))
+        same_mark_color_with_particle = self.settings.boolean_value(default_settings.same_mark_color_with_particle)
+        self.cb_same_mark_color_with_particle.setChecked(same_mark_color_with_particle)
+        self.enable_same_mark_color_with_particle(same_mark_color_with_particle)
         self.update_color_label(self.lb_trajectory_color_display, default_settings.trajectory_color)
         self.sb_trajectory_size.setValue(self.settings.int_value(default_settings.trajectory_size))
-        self.cb_speed_color.setChecked(self.settings.boolean_value(default_settings.enable_trajectory_speed_color))
+        same_trajectory_color_with_particle = self.settings.boolean_value(
+            default_settings.same_trajectory_color_with_particle)
+        self.cb_same_trajectory_color_with_particle.setChecked(same_trajectory_color_with_particle)
+        self.enable_same_trajectory_color_with_particle(same_trajectory_color_with_particle)
+        enable_speed_color = self.settings.boolean_value(default_settings.enable_trajectory_speed_color)
+        self.cb_speed_color.setChecked(enable_speed_color)
         self.update_color_label(self.lb_speed_color_display, default_settings.trajectory_speed_color)
         self.le_min_speed.setText(self.settings.str_value(default_settings.min_speed))
         self.le_max_speed.setText(self.settings.str_value(default_settings.max_speed))
+        self.enable_speed_color(enable_speed_color)
+        # Export
         self.dsb_export_scale.setValue(self.settings.float_value(default_settings.export_scale))
         self.dsb_export_speed.setValue(self.settings.float_value(default_settings.export_speed))
         self.cb_export_show_time.setChecked(self.settings.boolean_value(default_settings.export_show_time))
@@ -679,6 +689,25 @@ class SettingUi(object):
         colors = self.settings.list_value(item)
         colors = [QColor(c) for c in colors]
         label.set_color(colors)
+
+    def enable_same_mark_color_with_particle(self, enable: bool):
+        self.lb_mark_color_display.setEnabled(not enable)
+
+    def enable_same_trajectory_color_with_particle(self, enable: bool):
+        self.lb_trajectory_color_display.setEnabled(not enable)
+        if enable:
+            self.cb_speed_color.setChecked(False)
+            self.le_min_speed.setEnabled(False)
+            self.le_max_speed.setEnabled(False)
+            self.lb_speed_color_display.setEnabled(False)
+
+    def enable_speed_color(self, enable: bool):
+        self.le_min_speed.setEnabled(enable)
+        self.le_max_speed.setEnabled(enable)
+        self.lb_speed_color_display.setEnabled(enable)
+        if enable:
+            self.cb_same_trajectory_color_with_particle.setChecked(False)
+            self.lb_trajectory_color_display.setEnabled(False)
 
     def translate(self):
         self.dialog.setWindowTitle(self.dialog.tr(constant.settings_title))

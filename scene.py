@@ -79,6 +79,12 @@ class VideoScene(QGraphicsScene):
             self.update_trajectory(frame_index)
             self.trajectory_updated_frame_index.add(frame_index)
             print(f'frame:{frame_index} trajectory updated background')
+        particle_frame_indexes = all_frame_indexes - self.particle_updated_frame_index
+        if len(particle_frame_indexes) > 0:
+            frame_index = particle_frame_indexes.pop()
+            self.update_particle(frame_index)
+            self.particle_updated_frame_index.add(frame_index)
+            print(f'frame:{frame_index} particle updated background')
 
     def create_selection_rect(self):
         selection_rect = QGraphicsRectItem()

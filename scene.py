@@ -1,17 +1,20 @@
-from typing import Dict, Tuple, Optional, Set
+from typing import Dict, Tuple, Optional
 
-from PySide6.QtCore import QByteArray, QPointF, Qt, QRectF, QMarginsF, QTimer
+from PySide6.QtCore import QByteArray, QPointF, Qt, QRectF, QMarginsF, QTimer, Signal
 from PySide6.QtGui import QImage, QPixmap, QKeyEvent, QPen
 from PySide6.QtWidgets import *
 
+import constant
+import default_settings
 from base import LinkedMap
 from data import ParticleData, SettingWidgetHelper, VideoData
 from enums import OperationMode
 from settings import Settings
-import default_settings
 
 
 class VideoScene(QGraphicsScene):
+    sig_background_update_progress = Signal(int, int, str)
+    sig_background_update_finish = Signal()
 
     def __init__(self, parent: QGraphicsView, settings: Settings):
         super(VideoScene, self).__init__(parent)
@@ -85,6 +88,14 @@ class VideoScene(QGraphicsScene):
             self.update_particle(frame_index)
             self.particle_updated_frame_index.add(frame_index)
             print(f'frame:{frame_index} particle updated background')
+        total_size = len(all_frame_indexes) * 2
+        if total_size > 0:
+            not_updated_size = len(trajectory_frame_indexes) + len(particle_frame_indexes)
+            if not_updated_size == 0:
+                self.sig_background_update_finish.emit()
+            else:
+                self.sig_background_update_progress.emit(
+                    total_size, total_size - not_updated_size, self.tr(constant.status_updating))
 
     def create_selection_rect(self):
         selection_rect = QGraphicsRectItem()
@@ -310,8 +321,7 @@ class VideoScene(QGraphicsScene):
                     index = item.index
                     self._particle_data.update_particle_by(self.current_frame_index, index, moved.x(), moved.y())
                     affected_frame_indexes = self._particle_data.affected_frame_indexes(index, self.current_frame_index)
-                self.particle_updated_frame_index = {i for i in self.particle_updated_frame_index
-                                                     if i < self.current_frame_index}
+                self.particle_updated_frame_index -= {self.current_frame_index}
                 # 更新影响到轨迹的帧
                 self.trajectory_updated_frame_index -= affected_frame_indexes
 

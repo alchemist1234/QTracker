@@ -30,6 +30,10 @@ class MainWindow(QMainWindow):
         self.scene_for_export = None
         self.video_data = VideoData()
 
+        # status
+        # need to rewrite
+        self.is_loading = False
+
         # thread
         self.file_loader = self.init_file_loader()
         self.video_exporter = VideoExporter(self.ui.scene, self.settings)
@@ -50,6 +54,9 @@ class MainWindow(QMainWindow):
         self.ui.bt_show_particle.clicked.connect(lambda x: self.visibility_changed(self.ui.bt_show_particle))
         self.ui.bt_show_mark.clicked.connect(lambda x: self.visibility_changed(self.ui.bt_show_mark))
         self.ui.bt_show_trajectory.clicked.connect(lambda x: self.visibility_changed(self.ui.bt_show_trajectory))
+
+        self.ui.scene.sig_background_update_progress.connect(self.background_update_progress)
+        self.ui.scene.sig_background_update_finish.connect(self.background_update_finished)
 
     def init_file_loader(self):
         """
@@ -174,6 +181,7 @@ class MainWindow(QMainWindow):
         self.ui.sl_frames.setMaximum(frame_count)
         self.ui.lcd_current_frame.display(f'0-{frame_count}')
         self.ui.scene.video_data = self.video_data
+        self.is_loading = True
 
     @Slot(int, int, str)
     def progressing(self, total: int, current: int, info: str):
@@ -213,7 +221,21 @@ class MainWindow(QMainWindow):
         所有帧分析完后触发
         """
         # self.ui.scene.calc_trajectory()
+        self.is_loading = False
         pass
+
+    @Slot(int, int, str)
+    def background_update_progress(self, total: int, current: int, info: str):
+        if not self.is_loading:
+            val = int(current / total * self.ui.status_progress.maximum())
+            self.ui.status_bar.showMessage(info)
+            self.ui.status_progress.setValue(val)
+
+    @Slot()
+    def background_update_finished(self):
+        if not self.is_loading:
+            self.ui.status_bar.showMessage(self.tr(constant.status_ready))
+            self.ui.status_progress.setValue(self.ui.status_progress.maximum())
 
     def frame_changed(self, value: Optional[int] = None):
         """

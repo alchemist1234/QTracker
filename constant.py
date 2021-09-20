@@ -1,6 +1,7 @@
 status_ready = '就绪'
 status_reading = '读取中...'
 status_analyzing = '分析中...'
+status_updating = '更新中...'
 
 msg_error = '错误'
 msg_warning = '警告'

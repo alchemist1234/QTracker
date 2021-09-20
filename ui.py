@@ -1,4 +1,4 @@
-from typing import List, Union, Callable
+from typing import List, Union, Callable, Optional
 
 from PySide6.QtCore import *
 from PySide6.QtGui import *
@@ -111,6 +111,86 @@ class ViewButtonGroup(QWidget):
         layout.addWidget(self.bt_show_particle)
         layout.addWidget(self.bt_show_mark)
         layout.addWidget(self.bt_show_trajectory)
+
+
+class ColorWidget(QWidget):
+    def __init__(self, parent: QListView, color: QColor, height: int):
+        super().__init__(parent)
+        self.ui = ColorWidgetUi(self, color, height)
+        self.color = color
+        self.color_name = QColor(color).name()
+
+    def update_color(self, color: QColor):
+        self.color = color
+        self.color_name = QColor(color).name()
+        self.ui.lb_color.set_color(color)
+        self.ui.lb_color_name.setText(self.color_name)
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
+        self.parent().mouseDoubleClickEvent(event)
+
+
+class ColorListWidget(QListWidget):
+    default_color = Qt.red
+
+    def __init__(self, *args):
+        super(ColorListWidget, self).__init__(*args)
+        self._dragged_item = None
+        self._dragged_color = None
+
+    def add_color(self, color: Optional[QColor] = None):
+        color = ColorListWidget.default_color if color is None else color
+        item = QListWidgetItem(self)
+        size = self.gridSize()
+        widget = ColorWidget(self, color, size.height())
+        item.setSizeHint(QSize(size.width(), size.height()))
+        self.addItem(item)
+        self.setItemWidget(item, widget)
+
+    def add_colors(self, colors: List[QColor]):
+        for color in colors:
+            self.add_color(color)
+
+    def edit_color(self, model_index: QModelIndex):
+        widget = self.indexWidget(model_index)
+        origin_color = widget.color
+        color = QColorDialog.getColor(origin_color, self)
+        if color.isValid():
+            widget.update_color(color)
+
+    def remove_color(self):
+        self.takeItem(self.currentRow())
+
+    def colors(self):
+        colors = []
+        for i in range(self.count()):
+            item = self.item(i)
+            if item:
+                color_widget = self.itemWidget(item)
+                colors.append(color_widget.color)
+        return colors
+
+    def mousePressEvent(self, event: QMouseEvent):
+        if event.button() == Qt.LeftButton:
+            self._dragged_item = self.itemAt(event.pos())
+            self._dragged_color = self.itemWidget(self._dragged_item).color
+
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        if self._dragged_item:
+            origin_row = self.row(self._dragged_item)
+            current_item = self.itemAt(event.pos())
+            current_row = self.row(current_item)
+            if current_row != origin_row:
+                item = self.takeItem(origin_row)
+                self.removeItemWidget(item)
+                self.insertItem(current_row, item)
+                widget = ColorWidget(self, self._dragged_color, self.gridSize().height())
+                self.setItemWidget(self._dragged_item, widget)
+            self._dragged_item = None
+            self._dragged_color = None
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent):
+        self.edit_color(self.indexAt(event.pos()))
 
 
 class MainUi(object):
@@ -401,28 +481,19 @@ class SettingUi(object):
         self.gb_video = QGroupBox(dialog)
         vbox_videos = QVBoxLayout(self.gb_video)
 
-        self.cb_fit_to_screen = QCheckBox(dialog)
-        self.lb_skip_frames = QLabel(dialog)
-        self.sb_skip_frames = QSpinBox(dialog)
-        hbox_video1 = QHBoxLayout()
-        hbox_video1.addWidget(self.cb_fit_to_screen)
-        hbox_video1.addWidget(self.lb_skip_frames)
-        hbox_video1.addWidget(self.sb_skip_frames)
-
         self.lb_from_frames = QLabel(dialog)
         self.le_from_frames = QLineEdit('', dialog)
         self.lb_to_frames = QLabel(dialog)
         self.le_to_frames = QLineEdit('', dialog)
         self.le_from_frames.setValidator(QIntValidator(1, 9999, self.le_from_frames))
         self.le_to_frames.setValidator(QIntValidator(1, 9999, self.le_to_frames))
-        hbox_video2 = QHBoxLayout()
-        hbox_video2.addWidget(self.lb_from_frames)
-        hbox_video2.addWidget(self.le_from_frames)
-        hbox_video2.addWidget(self.lb_to_frames)
-        hbox_video2.addWidget(self.le_to_frames)
+        hbox_video1 = QHBoxLayout()
+        hbox_video1.addWidget(self.lb_from_frames)
+        hbox_video1.addWidget(self.le_from_frames)
+        hbox_video1.addWidget(self.lb_to_frames)
+        hbox_video1.addWidget(self.le_to_frames)
 
         vbox_videos.addLayout(hbox_video1)
-        vbox_videos.addLayout(hbox_video2)
 
         vbox_analyze.addWidget(self.gb_img_treat)
         vbox_analyze.addWidget(self.gb_detection_tracking)
@@ -466,7 +537,12 @@ class SettingUi(object):
         hbox_mark.addWidget(self.lb_mark_size)
         hbox_mark.addWidget(self.sb_mark_size)
 
+        self.cb_same_mark_color_with_particle = QCheckBox(dialog)
+        hbox_mark2 = QHBoxLayout()
+        hbox_mark2.addWidget(self.cb_same_mark_color_with_particle)
+
         vbox_mark.addLayout(hbox_mark)
+        vbox_mark.addLayout(hbox_mark2)
 
         # Display Tab - Trajectory
         self.gb_display_trajectory = QGroupBox(dialog)
@@ -483,14 +559,74 @@ class SettingUi(object):
         hbox_trajectory1.addWidget(self.lb_trajectory_size)
         hbox_trajectory1.addWidget(self.sb_trajectory_size)
 
+        self.cb_same_trajectory_color_with_particle = QCheckBox(dialog)
+        hbox_trajectory2 = QHBoxLayout()
+        hbox_trajectory2.addWidget(self.cb_same_trajectory_color_with_particle)
+
+        self.cb_speed_color = QCheckBox(dialog)
+        self.lb_speed_color_display = ColorLabel(dialog)
+        self.lb_speed_color_display.setFixedSize(76, 20)
+        hbox_trajectory3 = QHBoxLayout()
+        hbox_trajectory3.addWidget(self.cb_speed_color)
+        hbox_trajectory3.addWidget(self.lb_speed_color_display)
+
+        self.lb_min_speed = QLabel(dialog)
+        self.le_min_speed = QLineEdit('', dialog)
+        self.lb_max_speed = QLabel(dialog)
+        self.le_max_speed = QLineEdit('', dialog)
+        self.le_min_speed.setValidator(QIntValidator(1, 99999, self.le_min_speed))
+        self.le_max_speed.setValidator(QIntValidator(1, 99999, self.le_max_speed))
+        hbox_trajectory4 = QHBoxLayout()
+        hbox_trajectory4.addWidget(self.lb_min_speed)
+        hbox_trajectory4.addWidget(self.le_min_speed)
+        hbox_trajectory4.addWidget(self.lb_max_speed)
+        hbox_trajectory4.addWidget(self.le_max_speed)
+
         vbox_trajectory.addLayout(hbox_trajectory1)
+        vbox_trajectory.addLayout(hbox_trajectory2)
+        vbox_trajectory.addLayout(hbox_trajectory3)
+        vbox_trajectory.addLayout(hbox_trajectory4)
 
         vbox_display.addWidget(self.gb_display_particle)
         vbox_display.addWidget(self.gb_display_mark)
         vbox_display.addWidget(self.gb_display_trajectory)
 
+        # Export Tab
+        self.tab_export = QWidget(dialog)
+        vbox_export = QVBoxLayout(self.tab_export)
+
+        # Export Tab - Param
+        self.gb_export_param = QGroupBox(dialog)
+        vbox_export_param = QVBoxLayout(self.gb_export_param)
+
+        self.lb_export_scale = QLabel(dialog)
+        self.dsb_export_scale = QDoubleSpinBox(dialog)
+        self.dsb_export_scale.setDecimals(1)
+        self.dsb_export_scale.setRange(0, 10)
+        self.lb_export_speed = QLabel(dialog)
+        self.dsb_export_speed = QDoubleSpinBox(dialog)
+        self.dsb_export_speed.setDecimals(1)
+        self.dsb_export_speed.setSingleStep(0.1)
+        self.dsb_export_speed.setRange(0, 10)
+        hbox_export_param_1 = QHBoxLayout()
+        hbox_export_param_1.addWidget(self.lb_export_scale)
+        hbox_export_param_1.addWidget(self.dsb_export_scale)
+        hbox_export_param_1.addWidget(self.lb_export_speed)
+        hbox_export_param_1.addWidget(self.dsb_export_speed)
+        vbox_export_param.addLayout(hbox_export_param_1)
+
+        self.cb_export_show_time = QCheckBox(dialog)
+        self.cb_export_show_info = QCheckBox(dialog)
+        hbox_export_param_2 = QHBoxLayout()
+        hbox_export_param_2.addWidget(self.cb_export_show_time)
+        hbox_export_param_2.addWidget(self.cb_export_show_info)
+        vbox_export_param.addLayout(hbox_export_param_2)
+
+        vbox_export.addWidget(self.gb_export_param)
+
         self.tab_widget.addTab(self.tab_analyze, dialog.tr(constant.settings_tab_analyze))
         self.tab_widget.addTab(self.tab_display, dialog.tr(constant.settings_tab_display))
+        self.tab_widget.addTab(self.tab_export, dialog.tr(constant.settings_tab_export))
 
         self.bt_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal, dialog)
         self.bt_box.accepted.connect(dialog.accept)
@@ -520,16 +656,24 @@ class SettingUi(object):
         self.cb_kernel_size.setCurrentText(self.settings.str_value(default_settings.kernel_size))
         self.cb_split_particles.setChecked(self.settings.boolean_value(default_settings.split_circular_particles))
         self.sb_particle_radius_for_split.setValue(self.settings.int_value(default_settings.split_radius))
-        self.cb_fit_to_screen.setChecked(self.settings.boolean_value(default_settings.fit_to_screen))
-        self.sb_skip_frames.setValue(self.settings.int_value(default_settings.skip_frames))
         self.le_from_frames.setText(self.settings.str_value(default_settings.from_frames))
         self.le_to_frames.setText(self.settings.str_value(default_settings.to_frames))
         self.update_color_label(self.lb_particle_color_display, default_settings.particle_color)
         self.sb_particle_size.setValue(self.settings.int_value(default_settings.particle_size))
         self.update_color_label(self.lb_mark_color_display, default_settings.mark_color)
         self.sb_mark_size.setValue(self.settings.int_value(default_settings.mark_size))
+        self.cb_same_mark_color_with_particle.setChecked(
+            self.settings.boolean_value(default_settings.same_mark_color_with_particle))
         self.update_color_label(self.lb_trajectory_color_display, default_settings.trajectory_color)
         self.sb_trajectory_size.setValue(self.settings.int_value(default_settings.trajectory_size))
+        self.cb_speed_color.setChecked(self.settings.boolean_value(default_settings.enable_trajectory_speed_color))
+        self.update_color_label(self.lb_speed_color_display, default_settings.trajectory_speed_color)
+        self.le_min_speed.setText(self.settings.str_value(default_settings.min_speed))
+        self.le_max_speed.setText(self.settings.str_value(default_settings.max_speed))
+        self.dsb_export_scale.setValue(self.settings.float_value(default_settings.export_scale))
+        self.dsb_export_speed.setValue(self.settings.float_value(default_settings.export_speed))
+        self.cb_export_show_time.setChecked(self.settings.boolean_value(default_settings.export_show_time))
+        self.cb_export_show_info.setChecked(self.settings.boolean_value(default_settings.export_show_info))
 
     def update_color_label(self, label: ColorLabel, item: default_settings.setting_item):
         colors = self.settings.list_value(item)
@@ -554,26 +698,36 @@ class SettingUi(object):
         self.lb_kernel_size.setText(self.dialog.tr(constant.settings_widget_kernel_size))
         self.cb_split_particles.setText(self.dialog.tr(constant.settings_widget_split_particle))
         self.lb_particle_radius_for_split.setText(self.dialog.tr(constant.settings_widget_particle_radius_for_split))
-        self.cb_fit_to_screen.setText(self.dialog.tr(constant.settings_widget_fit_to_screen))
-        self.lb_skip_frames.setText(self.dialog.tr(constant.settings_widget_skip_frames))
         self.lb_from_frames.setText(self.dialog.tr(constant.settings_widget_from_frames))
         self.lb_to_frames.setText(self.dialog.tr(constant.settings_widget_to_frames))
         self.lb_particle_color.setText(self.dialog.tr(constant.settings_widget_particle_color))
         self.lb_particle_size.setText(self.dialog.tr(constant.settings_widget_particle_size))
         self.lb_mark_color.setText(self.dialog.tr(constant.settings_widget_mark_color))
         self.lb_mark_size.setText(self.dialog.tr(constant.settings_widget_mark_size))
+        self.cb_same_mark_color_with_particle.setText(
+            self.dialog.tr(constant.settings_widget_same_mark_color_with_particle))
         self.lb_trajectory_color.setText(self.dialog.tr(constant.settings_widget_trajectory_color))
         self.lb_trajectory_size.setText(self.dialog.tr(constant.settings_widget_trajectory_size))
+        self.cb_same_trajectory_color_with_particle.setText(
+            self.dialog.tr(constant.settings_widget_same_trajectory_color_with_particle))
+        self.cb_speed_color.setText(self.dialog.tr(constant.settings_widget_enable_speed_color))
+        self.lb_min_speed.setText(self.dialog.tr(constant.settings_widget_min_speed))
+        self.lb_max_speed.setText(self.dialog.tr(constant.settings_widget_max_speed))
+        self.lb_export_scale.setText(self.dialog.tr(constant.settings_widget_export_scale))
+        self.lb_export_speed.setText(self.dialog.tr(constant.settings_widget_export_speed))
+        self.cb_export_show_time.setText(self.dialog.tr(constant.settings_widget_show_time))
+        self.cb_export_show_info.setText(self.dialog.tr(constant.settings_widget_show_info))
 
 
 class ColorEditorUi(object):
     def __init__(self, color_editor: QDialog):
         self.color_editor = color_editor
         self.hbox_base = QHBoxLayout(color_editor)
-        self.lv_color = QListWidget(color_editor)
+        self.lv_color = ColorListWidget(color_editor)
 
         self.lv_color.setGridSize(QSize(100, 32))
         self.lv_color.setViewMode(QListView.ListMode)
+        self.lv_color.setMovement(QListView.Free)
 
         self.bt_add = QPushButton(color_editor)
         self.bt_delete = QPushButton(color_editor)

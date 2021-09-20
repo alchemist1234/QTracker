@@ -266,13 +266,14 @@ class VideoExporter(QObject):
     sig_export_frame = Signal(int)
     sig_export_finish = Signal()
 
-    def __init__(self, scene: VideoScene):
+    def __init__(self, scene: VideoScene, settings: Settings):
         super().__init__()
         self._file_path = None
         self._file_name = None
         self._file_ext = None
         self._video_data = None
         self.scene = scene
+        self.settings = settings
         self.writer = cv2.VideoWriter()
         # self.sig_export_frame_updated.connect(self.write_data)
 
@@ -296,10 +297,12 @@ class VideoExporter(QObject):
     def open_writer(self, source_rect: QRectF = None):
         rect = QRect(0, 0, self.video_data.width,
                      self.video_data.height) if source_rect is None else source_rect.toRect()
-        fourcc = VideoExporter.codes_map[self._file_ext]
-        print(fourcc)
-        self.writer.open(self._file_path, cv2.VideoWriter.fourcc(*fourcc), self.video_data.fps,
-                         (rect.width(), rect.height()), True)
+        fourcc_str = VideoExporter.codes_map[self._file_ext]
+        fourcc = cv2.VideoWriter.fourcc(*fourcc_str)
+        scale = self.settings.float_value(default_settings.export_scale)
+        speed = self.settings.float_value(default_settings.export_speed)
+        self.writer.open(self._file_path, fourcc, int(self.video_data.fps * speed),
+                         (int(rect.width() * scale), int(rect.height() * scale)), True)
 
     def release_writer(self):
         self.writer.release()
@@ -308,7 +311,8 @@ class VideoExporter(QObject):
         self.scene.update_frame(frame_index)
         rect = QRect(0, 0, self.video_data.width,
                      self.video_data.height) if source_rect is None else source_rect.toRect()
-        img = QImage(rect.width(), rect.height(), QImage.Format_ARGB32_Premultiplied)
+        scale = self.settings.float_value(default_settings.export_scale)
+        img = QImage(int(rect.width() * scale), int(rect.height() * scale), QImage.Format_ARGB32_Premultiplied)
         painter = QPainter()
         painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
         painter.begin(img)

@@ -20,7 +20,7 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
         # ui
         self.settings = Settings('settings.ini')
-        self.settings.set_value(default_settings.index_filter, [])
+        self.init_unsaved_settings()
         self.ui = MainUi(self, self.settings)
         self.file_path = None
         self.waiting_dialog = None
@@ -32,7 +32,7 @@ class MainWindow(QMainWindow):
 
         # thread
         self.file_loader = self.init_file_loader()
-        self.video_exporter = VideoExporter(self.ui.scene)
+        self.video_exporter = VideoExporter(self.ui.scene, self.settings)
 
         # connect
         self.ui.bt_open_file.clicked.connect(self.select_file)
@@ -61,6 +61,10 @@ class MainWindow(QMainWindow):
         file_loader.sig_frame_finished.connect(self.load_frame_finished)
         file_loader.sig_all_finished.connect(self.load_all_finished)
         return file_loader
+
+    def init_unsaved_settings(self):
+        self.settings.set_value(default_settings.index_filter, [])
+        self.settings.set_value(default_settings.fps, -1)
 
     # def init_analyzer(self):
     #     analyzer = Analyzer(self.settings, self)
@@ -115,6 +119,7 @@ class MainWindow(QMainWindow):
         """
         if self.file_selected():
             self.video_data = self.file_loader.set_file(self.file_path)
+            self.settings.set_value(default_settings.fps, self.video_data.fps)
             self.file_loader.start()
         else:
             QMessageBox.warning(self.parent(), self.tr(constant.msg_error), self.tr(constant.msg_file_unselected))
@@ -164,6 +169,7 @@ class MainWindow(QMainWindow):
         """
         self.ui.sl_frames.setMaximum(frame_count)
         self.ui.lcd_current_frame.display(f'0-{frame_count}')
+        self.ui.scene.video_data = self.video_data
 
     @Slot(int, int, str)
     def progressing(self, total: int, current: int, info: str):
@@ -202,7 +208,7 @@ class MainWindow(QMainWindow):
         """
         所有帧分析完后触发
         """
-        self.ui.scene.calc_trajectory()
+        # self.ui.scene.calc_trajectory()
         pass
 
     def frame_changed(self, value: Optional[int] = None):
@@ -260,6 +266,7 @@ class SettingDialog(QDialog):
         self.ui.lb_mark_color_display.clicked.connect(lambda x: self.edit_color(self.ui.lb_mark_color_display))
         self.ui.lb_trajectory_color_display.clicked.connect(
             lambda x: self.edit_color(self.ui.lb_trajectory_color_display))
+        self.ui.lb_speed_color_display.clicked.connect(lambda x: self.edit_color(self.ui.lb_speed_color_display))
 
     def edit_color(self, label: ColorLabel):
         editor = ColorEditor(self, label)
@@ -291,8 +298,6 @@ class SettingDialog(QDialog):
         self.settings.set_value(default_settings.kernel_size, self.ui.cb_kernel_size.currentText())
         self.settings.set_value(default_settings.split_circular_particles, self.ui.cb_split_particles.isChecked())
         self.settings.set_value(default_settings.split_radius, self.ui.sb_particle_radius_for_split.value())
-        self.settings.set_value(default_settings.fit_to_screen, self.ui.cb_fit_to_screen.isChecked())
-        self.settings.set_value(default_settings.skip_frames, self.ui.sb_skip_frames.value())
         self.settings.set_value(default_settings.from_frames, self.ui.le_from_frames.text())
         self.settings.set_value(default_settings.to_frames, self.ui.le_to_frames.text())
         # display
@@ -300,27 +305,23 @@ class SettingDialog(QDialog):
         self.settings.set_value(default_settings.particle_size, self.ui.sb_particle_size.value())
         self.settings.set_value(default_settings.mark_color, self.ui.lb_mark_color_display.colors)
         self.settings.set_value(default_settings.mark_size, self.ui.sb_mark_size.value())
+        self.settings.set_value(default_settings.same_mark_color_with_particle,
+                                self.ui.cb_same_mark_color_with_particle.isChecked())
         self.settings.set_value(default_settings.trajectory_color, self.ui.lb_trajectory_color_display.colors)
         self.settings.set_value(default_settings.trajectory_size, self.ui.sb_trajectory_size.value())
+        self.settings.set_value(default_settings.same_trajectory_color_with_particle,
+                                self.ui.cb_same_trajectory_color_with_particle.isChecked())
+        self.settings.set_value(default_settings.enable_trajectory_speed_color, self.ui.cb_speed_color.isChecked())
+        self.settings.set_value(default_settings.trajectory_speed_color, self.ui.lb_speed_color_display.colors)
+        self.settings.set_value(default_settings.min_speed, self.ui.le_min_speed.text())
+        self.settings.set_value(default_settings.max_speed, self.ui.le_max_speed.text())
+        # export
+        self.settings.set_value(default_settings.export_scale, self.ui.dsb_export_scale.value())
+        self.settings.set_value(default_settings.export_speed, self.ui.dsb_export_speed.value())
+        self.settings.set_value(default_settings.export_show_time, self.ui.cb_export_show_time.isChecked())
+        self.settings.set_value(default_settings.export_show_info, self.ui.cb_export_show_info.isChecked())
 
         super(SettingDialog, self).accept()
-
-
-class ColorWidget(QWidget):
-    def __init__(self, parent: QListView, color: QColor, height: int):
-        super().__init__(parent)
-        self.ui = ColorWidgetUi(self, color, height)
-        self.color = color
-        self.color_name = QColor(color).name()
-
-    def update_color(self, color: QColor):
-        self.color = color
-        self.color_name = QColor(color).name()
-        self.ui.lb_color.set_color(color)
-        self.ui.lb_color_name.setText(self.color_name)
-
-    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
-        self.parent().mouseDoubleClickEvent(event)
 
 
 class ColorEditor(QDialog):
@@ -332,40 +333,16 @@ class ColorEditor(QDialog):
         self.parent = parent
         self.label = label
         self.ui = ColorEditorUi(self)
+        self._dragged_row = None
 
-        self.ui.bt_add.clicked.connect(lambda x: self.add_color())
-        self.ui.lv_color.doubleClicked.connect(self.edit_color)
+        self.ui.bt_add.clicked.connect(lambda x: self.ui.lv_color.add_color())
+        self.ui.bt_delete.clicked.connect(self.ui.lv_color.remove_color)
 
     def add_colors(self, colors: List[QColor]):
-        for color in colors:
-            self.add_color(color)
-
-    def add_color(self, color: Optional[QColor] = None):
-        color = ColorEditor.default_color if color is None else color
-        item = QListWidgetItem(self.ui.lv_color)
-        size = self.ui.lv_color.gridSize()
-        widget = ColorWidget(self.ui.lv_color, color, size.height())
-        item.setSizeHint(QSize(size.width(), size.height()))
-        self.ui.lv_color.addItem(item)
-        self.ui.lv_color.setItemWidget(item, widget)
-
-    def edit_color(self, model_index: QModelIndex):
-        widget = self.ui.lv_color.indexWidget(model_index)
-        origin_color = widget.color
-        color = QColorDialog.getColor(origin_color, self)
-        if color.isValid():
-            widget.update_color(color)
-
-    def get_colors(self):
-        colors = []
-        for i in range(self.ui.lv_color.count()):
-            item = self.ui.lv_color.item(i)
-            color_widget = self.ui.lv_color.itemWidget(item)
-            colors.append(color_widget.color)
-        return colors
+        self.ui.lv_color.add_colors(colors)
 
     def accept(self) -> None:
-        self.sig_color_changed.emit(self.label, self.get_colors())
+        self.sig_color_changed.emit(self.label, self.ui.lv_color.colors())
         super(ColorEditor, self).accept()
 
 

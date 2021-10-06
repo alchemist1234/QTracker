@@ -213,10 +213,15 @@ class MainUi(object):
         self.widget.setLayout(self.vbox_widget)
 
         # Menu Bar
-        # self.menu_bar = QMenuBar()
-        # main.setMenuBar(self.menu_bar)
-        # self.menu_file = self.menu_bar.addMenu('file')
-        # self.action_open = self.menu_file.addAction('open')
+        self.menu_bar = QMenuBar()
+        main.setMenuBar(self.menu_bar)
+        self.menu_file = QMenu(main.tr(constant.menu_file), self.menu_bar)
+        self.menu_bar.addMenu(self.menu_file)
+        # self.action_save_project = self.menu_file.addAction(main.tr(constant.menu_action_save_project))
+        # self.action_open_project = self.menu_file.addAction(main.tr(constant.menu_action_open_project))
+        # self.menu_file.addSeparator()
+        self.action_import_settings = self.menu_file.addAction(main.tr(constant.menu_action_import_settings))
+        self.action_export_settings = self.menu_file.addAction(main.tr(constant.menu_action_export_settings))
 
         # Tool Bar
         self.tool_bar = main.addToolBar('tool bar')

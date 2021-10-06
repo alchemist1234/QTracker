@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Optional
+from typing import Dict, Tuple, Optional, Mapping
 
 from PySide6.QtCore import QByteArray, QPointF, Qt, QRectF, QMarginsF, QTimer, Signal
 from PySide6.QtGui import QImage, QPixmap, QKeyEvent, QPen
@@ -13,7 +13,9 @@ from settings import Settings
 
 
 class VideoScene(QGraphicsScene):
+    # 后台更新信号
     sig_background_update_progress = Signal(int, int, str)
+    # 后台更新完成信号
     sig_background_update_finish = Signal()
 
     def __init__(self, parent: QGraphicsView, settings: Settings):
@@ -24,7 +26,7 @@ class VideoScene(QGraphicsScene):
         self.mode = OperationMode.SELECT
         # 视频帧base64字典 {帧数: base64}
         self._frame_base64_dict = {}
-        # 粒子数据字典 {帧数: ParticleData}
+        # 粒子数据
         self._particle_data = ParticleData(settings)
         # 粒子+标签 Item
         self.particle_group_items = LinkedMap()
@@ -67,6 +69,20 @@ class VideoScene(QGraphicsScene):
     @video_data.setter
     def video_data(self, video_data: VideoData):
         self._video_data = video_data
+
+    @property
+    def frame_base64(self) -> Dict:
+        return self._frame_base64_dict
+
+    @property
+    def particle_data(self) -> ParticleData:
+        return self._particle_data
+
+    def import_data(self, frame_base64_dict: Mapping, particle_data):
+        self._frame_base64_dict = frame_base64_dict
+        self.current_frame_index = 1
+        self.update_frame(1)
+        self.particle_data.data = particle_data
 
     def background_timer(self):
         timer = QTimer()

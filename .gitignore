@@ -3,6 +3,7 @@
 **/__pycache__/
 **/config.ini
 **/settings.ini
+*.ini
 dist/
 build/
 *.spec
@@ -10,3 +11,4 @@ lib/
 build.bat
 readme/changelog.md
 readme/todo.md
+*.bin

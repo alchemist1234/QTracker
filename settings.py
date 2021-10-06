@@ -16,6 +16,9 @@ class Settings(object):
         self.settings.setFallbacksEnabled(False)
         self.set_value(index_filter, [])
 
+    def sync(self):
+        self.settings.sync()
+
     def int_value(self, item: setting_item):
         return int(self.value(item))
 

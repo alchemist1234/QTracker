@@ -1,3 +1,9 @@
+menu_file = '文件'
+menu_action_open_project = '打开...'
+menu_action_save_project = '保存'
+menu_action_import_settings = '导入配置'
+menu_action_export_settings = '导出配置'
+
 status_ready = '就绪'
 status_reading = '读取中...'
 status_analyzing = '分析中...'
@@ -7,9 +13,10 @@ msg_error = '错误'
 msg_warning = '警告'
 
 msg_file_unselected = '未选择文件'
-msg_select_file = '选择视频文件'
+msg_select_video_file = '选择视频文件'
 msg_waiting = '请稍候'
 msg_exporting = '正在导出...'
+msg_select_setting_file = '选择配置文件'
 
 main_title = 'QTracker'
 main_widget_open_file = '打开文件'
@@ -75,9 +82,3 @@ settings_widget_show_info = '显示信息'
 color_edit_widget_add = '添加颜色'
 color_edit_widget_delete = '删除颜色'
 color_edit_widget_random = '随机颜色'
-
-
-
-
-
-

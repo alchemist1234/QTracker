@@ -1,4 +1,9 @@
+import bz2
 import os
+import pickle
+import struct
+from datetime import datetime
+from shutil import copyfile
 from typing import List, Optional, Dict, Tuple
 
 from PySide6.QtCore import Qt, Slot, Signal
@@ -39,22 +44,32 @@ class MainWindow(QMainWindow):
         self.video_exporter = VideoExporter(self.ui.scene, self.settings)
 
         # connect
+        self.ui.sl_frames.valueChanged.connect(self.frame_changed)
+        self.ui.le_filter.textChanged.connect(self.filter_changed)
+
+        # tool bar connect
         self.ui.bt_open_file.clicked.connect(self.select_file)
         self.ui.bt_settings.clicked.connect(self.show_settings)
         self.ui.bt_load_file.clicked.connect(self.load_file)
         self.ui.bt_export.clicked.connect(self.export_video)
+
+        # menu bar connect
+        # self.ui.action_save_project.triggered.connect(self.save_project)
+        # self.ui.action_open_project.triggered.connect(self.open_project)
+        self.ui.action_import_settings.triggered.connect(self.import_settings)
+        self.ui.action_export_settings.triggered.connect(self.export_settings)
+
+        # scene connect
         self.ui.bt_select.clicked.connect(lambda bt: self.update_mode(OperationMode.SELECT))
         self.ui.bt_move.clicked.connect(lambda bt: self.update_mode(OperationMode.MOVE))
         self.ui.bt_add.clicked.connect(lambda bt: self.update_mode(OperationMode.ADD))
         self.ui.bt_crop.clicked.connect(lambda bt: self.update_mode(OperationMode.CROP))
         self.ui.bt_combine.clicked.connect(self.combine_particles)
-        self.ui.sl_frames.valueChanged.connect(self.frame_changed)
-        self.ui.le_filter.textChanged.connect(self.filter_changed)
-
         self.ui.bt_show_particle.clicked.connect(lambda x: self.visibility_changed(self.ui.bt_show_particle))
         self.ui.bt_show_mark.clicked.connect(lambda x: self.visibility_changed(self.ui.bt_show_mark))
         self.ui.bt_show_trajectory.clicked.connect(lambda x: self.visibility_changed(self.ui.bt_show_trajectory))
 
+        # background connect
         self.ui.scene.sig_background_update_progress.connect(self.background_update_progress)
         self.ui.scene.sig_background_update_finish.connect(self.background_update_finished)
 
@@ -70,6 +85,9 @@ class MainWindow(QMainWindow):
         return file_loader
 
     def init_unsaved_settings(self):
+        """
+        初始化不在配置文件中的配置
+        """
         self.settings.set_value(default_settings.index_filter, [])
         self.settings.set_value(default_settings.fps, -1)
 
@@ -88,7 +106,7 @@ class MainWindow(QMainWindow):
         """
         options = 'avi file (*.avi);;mp4 file (*.mp4);;flv file (*.flv);;ogv file (*.ogv)'
         file_path = self.settings.value(default_settings.dir_path)
-        file_path, _ = QFileDialog.getOpenFileName(self, self.tr(constant.msg_select_file), file_path, options)
+        file_path, _ = QFileDialog.getOpenFileName(self, self.tr(constant.msg_select_video_file), file_path, options)
         path, _ = os.path.split(file_path)
         self.file_path = file_path
         self.settings.set_value(default_settings.file_path, file_path)
@@ -226,6 +244,9 @@ class MainWindow(QMainWindow):
 
     @Slot(int, int, str)
     def background_update_progress(self, total: int, current: int, info: str):
+        """
+        后台更新进度槽
+        """
         if not self.is_loading:
             val = int(current / total * self.ui.status_progress.maximum())
             self.ui.status_bar.showMessage(info)
@@ -233,6 +254,9 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def background_update_finished(self):
+        """
+        后台更新完成槽
+        """
         if not self.is_loading:
             self.ui.status_bar.showMessage(self.tr(constant.status_ready))
             self.ui.status_progress.setValue(self.ui.status_progress.maximum())
@@ -272,6 +296,83 @@ class MainWindow(QMainWindow):
         else:
             indexes = {i.index for i in items}
             self.ui.scene.combine_particles(indexes)
+
+    def save_project(self):
+        """
+        保存工程
+        """
+        file_name = 'proj.bin'
+        setting_file_name = 'settings.ini'
+        sep = struct.pack('I', 900314)
+        with bz2.open(file_name, 'wb') as f:
+            particle_data_byte = pickle.dumps(self.ui.scene.particle_data.data)
+            frame_base64_byte = pickle.dumps(self.ui.scene.frame_base64)
+            setting_file = open(setting_file_name, 'r')
+            settings_byte = pickle.dumps(setting_file.readlines())
+            setting_file.close()
+            print(f'data: {len(particle_data_byte)}')
+            print(f'frame: {len(frame_base64_byte)}')
+            print(f'setting: {len(settings_byte)}')
+            f.write(particle_data_byte)
+            f.write(sep)
+            f.write(frame_base64_byte)
+            f.write(sep)
+            f.write(settings_byte)
+
+    def open_project(self):
+        """
+        打开工程
+        """
+        file_name = 'proj.bin'
+        sep = struct.pack('I', 900314)
+        with bz2.open(file_name, 'rb') as f:
+            content = b''.join(f.readlines())
+        contents = content.split(sep)
+        if len(contents) < 3:
+            print(content)
+            print('工程文件异常')
+        particle_data_byte = contents[0]
+        frame_base64_byte = contents[1]
+        settings_byte = contents[2]
+        particle_data = pickle.loads(particle_data_byte)
+        frame_base64 = pickle.loads(frame_base64_byte)
+        settings = pickle.loads(settings_byte)
+        self.ui.scene.import_data(frame_base64, particle_data)
+
+    def export_settings(self):
+        """
+        导出配置
+        """
+        file_path, file_type = QFileDialog.getSaveFileName(self, 'export settings', None, 'ini file (*.ini)')
+        ret = None
+        if len(file_path) > 0:
+            try:
+                ret = copyfile(self.settings.setting_path, file_path)
+            except Exception as e:
+                QMessageBox.warning(None, '警告', '导出配置文件失败', QMessageBox.Ok)
+            if ret is not None:
+                QMessageBox.information(None, '提示', f'配置文件已导出到{ret}', QMessageBox.Ok)
+
+    def import_settings(self):
+        """
+        导入设置
+        """
+        default_settings_path = self.settings.setting_path
+        file_path, _ = QFileDialog.getOpenFileName(self, 'import settings', None, 'ini file (*.ini)')
+        if len(file_path) > 0:
+            file_name, ext = os.path.splitext(default_settings_path)
+            # 将原配置文件备份
+            back_file = f'{file_name}.{datetime.now():%Y%m%d%H%M%S}{ext}'
+            ret1, ret2 = None, None
+            try:
+                ret1 = copyfile(default_settings_path, back_file)
+                ret2 = copyfile(file_path, default_settings_path)
+            except Exception as e:
+                QMessageBox.warning(None, '警告', '导入配置文件失败', QMessageBox.Ok)
+            if ret1 is not None and ret2 is not None:
+                # 使导入配置生效
+                self.settings.sync()
+                QMessageBox.information(None, '提示', f'配置文件{file_path}已导入\n原配置文件备份到{ret1}', QMessageBox.Ok)
 
     def resizeEvent(self, event: QResizeEvent):
         """

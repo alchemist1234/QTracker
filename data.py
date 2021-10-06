@@ -369,6 +369,14 @@ class ParticleData(object):
         # col_index 是 帧序号
         self._point_data = EnhancedMap()
 
+    @property
+    def data(self) -> EnhancedMap:
+        return self._point_data
+
+    @data.setter
+    def data(self, data: EnhancedMap):
+        self._point_data = data
+
     def frame_indexes(self):
         return self._point_data.col_keys()
 
@@ -463,3 +471,8 @@ class ParticleData(object):
 
     def clear(self):
         self._point_data.clear()
+
+
+class Project(object):
+    def __init__(self):
+        pass

@@ -38,6 +38,7 @@ class MainWindow(QMainWindow):
         # status
         # need to rewrite
         self.is_loading = False
+        self.loaded = False
 
         # thread
         self.file_loader = self.init_file_loader()
@@ -146,10 +147,17 @@ class MainWindow(QMainWindow):
         加载(分析)视频
         点击分析按钮触发
         """
+        if self.loaded:
+            ret = QMessageBox.information(None, '提示', f'是否重新加载视频',
+                                          QMessageBox.Cancel, QMessageBox.Ok)
+            if ret == QMessageBox.Cancel:
+                return
         if self.file_selected():
+            # self.ui.scene.clear_data()
             self.video_data = self.file_loader.set_file(self.file_path)
             self.settings.set_value(default_settings.fps, self.video_data.fps)
             self.file_loader.start()
+            self.loaded = True
         else:
             QMessageBox.warning(self.parent(), self.tr(constant.msg_error), self.tr(constant.msg_file_unselected))
 
@@ -494,4 +502,4 @@ if __name__ == '__main__':
     app.setAttribute(Qt.AA_UseHighDpiPixmaps)
     main = MainWindow()
     main.show()
-    app.exec_()
+    app.exec()

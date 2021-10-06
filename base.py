@@ -179,6 +179,19 @@ class EnhancedMap(object):
         self._linked_maps[row][col] = data
         self._hash_maps[col][row] = data
 
+    def remove_row(self, row: int):
+        if row in self._linked_maps:
+            self._linked_maps.pop(row)
+        for col in self._hash_maps:
+            if row in self._hash_maps[col]:
+                del self._hash_maps[col][row]
+
+    def remove_col(self, col: int):
+        if col in self._hash_maps:
+            self._hash_maps.pop(col)
+        for row in self._linked_maps:
+            self._linked_maps[row].remove_by_index(col)
+
     def remove_data(self, row: int, col: int):
         if col in self._hash_maps:
             if row in self._hash_maps[col]:

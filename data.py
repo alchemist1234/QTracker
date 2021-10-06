@@ -383,6 +383,9 @@ class ParticleData(object):
     def indexes(self):
         return self._point_data.row_keys()
 
+    def clear_frame_particles(self, frame_index):
+        self._point_data.remove_col(frame_index)
+
     def update_frame_particles(self, frame_index: int, pos: Dict[int, Tuple[float, float]]):
         point_map = {}
         for index, (x, y) in pos.items():

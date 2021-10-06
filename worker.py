@@ -41,10 +41,10 @@ class VideoLoader(QThread):
         return self.video_data
 
     def run(self):
-        self.sig_start.emit(self.video_data.frame_count)
         if self.vid is None:
             QMessageBox.warning(self.parent(), '错误', '未选择文件')
             return
+        self.sig_start.emit(self.video_data.frame_count)
         frame_index = 0
         while True:
             ret, frame = self.vid.read()

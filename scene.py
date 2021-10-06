@@ -79,6 +79,7 @@ class VideoScene(QGraphicsScene):
         return self._particle_data
 
     def import_data(self, frame_base64_dict: Mapping, particle_data):
+        # 导入工程 not finished
         self._frame_base64_dict = frame_base64_dict
         self.current_frame_index = 1
         self.update_frame(1)
@@ -149,18 +150,22 @@ class VideoScene(QGraphicsScene):
         frame_indexes.sort()
         return frame_indexes
 
-    def clear(self):
+    def clear_data(self):
         """
         清除所有数据
         """
         self._frame_base64_dict = {}
         self._particle_data.clear()
-        self._trajectory_data.clear()
-        for group in self.particle_group_items:
-            self.removeItem(group)
+        self.clear()
+        # self.current_frame_item = QGraphicsPixmapItem(None)
+        # item_dict = self.particle_group_items[self.current_frame_index]
+        # if item_dict is not None:
+        #     for item in item_dict.items():
+        #         self.removeItem(item)
         self.particle_group_items.clear()
         self.trajectory_items.clear()
         self.current_frame_item = QGraphicsPixmapItem(None)
+        self.addItem(self.current_frame_item)
         self.current_frame_index = 0
 
     def add_frame_image(self, frame_index: int, img: bytes):
@@ -177,6 +182,7 @@ class VideoScene(QGraphicsScene):
         :param frame_index: 帧索引
         :param particle_pos: 粒子坐标
         """
+        self._particle_data.clear_frame_particles(frame_index)
         self._particle_data.update_frame_particles(frame_index, particle_pos)
         self.update_particle(frame_index)
         self.update_trajectory(frame_index)
